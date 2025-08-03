@@ -160,6 +160,135 @@ app.post('/api/settings', async (req, res) => {
   }
 });
 
+// Chart status endpoint
+app.get('/api/chart/status', async (req, res) => {
+  try {
+    // Mock chart data for dashboard
+    const chartData = {
+      instagram: {
+        volume: Math.floor(Math.random() * 10) + 1,
+        speed: (Math.random() * 3 + 1).toFixed(1) + 's',
+        thickness: (Math.random() * 2 + 2).toFixed(1) + 'px',
+        posts: Math.floor(Math.random() * 50) + 10
+      },
+      youtube: {
+        volume: Math.floor(Math.random() * 8) + 1,
+        speed: (Math.random() * 4 + 2).toFixed(1) + 's', 
+        thickness: (Math.random() * 2 + 1.5).toFixed(1) + 'px',
+        posts: Math.floor(Math.random() * 30) + 5
+      }
+    };
+    res.json(chartData);
+  } catch (err) {
+    console.error('[CHART STATUS ERROR]', err);
+    res.status(500).json({ error: 'Failed to get chart status' });
+  }
+});
+
+// Activity feed endpoint
+app.get('/api/activity/feed', async (req, res) => {
+  try {
+    const { platform, limit = 20 } = req.query;
+    
+    // Mock activity data
+    const activities = [];
+    const platforms = platform ? [platform] : ['instagram', 'youtube'];
+    const limitNum = parseInt(limit);
+    
+    for (let i = 0; i < Math.min(limitNum, 10); i++) {
+      const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
+      activities.push({
+        id: `activity_${Date.now()}_${i}`,
+        platform: randomPlatform,
+        type: 'post',
+        caption: `Sample ${randomPlatform} post ${i + 1}`,
+        timestamp: new Date(Date.now() - (i * 3600000)).toISOString(),
+        status: 'completed'
+      });
+    }
+    
+    res.json({ success: true, activities });
+  } catch (err) {
+    console.error('[ACTIVITY FEED ERROR]', err);
+    res.status(500).json({ error: 'Failed to get activity feed' });
+  }
+});
+
+// Autopilot activity endpoint  
+app.get('/api/autopilot/activity', async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    
+    // Get recent activities from MongoDB
+    const activities = await AutopilotQueue.find({})
+      .sort({ insertedAt: -1 })
+      .limit(parseInt(limit))
+      .exec();
+    
+    res.json({ success: true, activities });
+  } catch (err) {
+    console.error('[AUTOPILOT ACTIVITY ERROR]', err);
+    res.status(500).json({ error: 'Failed to get autopilot activity' });
+  }
+});
+
+// Instagram analytics endpoint
+app.get('/api/instagram/analytics', async (req, res) => {
+  try {
+    // Mock Instagram analytics data
+    const analytics = {
+      followers: Math.floor(Math.random() * 10000) + 1000,
+      posts: Math.floor(Math.random() * 100) + 20,
+      engagement: (Math.random() * 5 + 1).toFixed(2) + '%',
+      reach: Math.floor(Math.random() * 50000) + 5000
+    };
+    res.json({ success: true, analytics });
+  } catch (err) {
+    console.error('[INSTAGRAM ANALYTICS ERROR]', err);
+    res.status(500).json({ error: 'Failed to get Instagram analytics' });
+  }
+});
+
+// YouTube analytics endpoint
+app.get('/api/youtube/analytics', async (req, res) => {
+  try {
+    // Mock YouTube analytics data  
+    const analytics = {
+      subscribers: Math.floor(Math.random() * 5000) + 500,
+      videos: Math.floor(Math.random() * 50) + 10,
+      views: Math.floor(Math.random() * 100000) + 10000,
+      watchTime: Math.floor(Math.random() * 1000) + 100 + ' hours'
+    };
+    res.json({ success: true, analytics });
+  } catch (err) {
+    console.error('[YOUTUBE ANALYTICS ERROR]', err);
+    res.status(500).json({ error: 'Failed to get YouTube analytics' });
+  }
+});
+
+// Events endpoint for real-time updates
+app.get('/api/events/recent', async (req, res) => {
+  try {
+    const { since } = req.query;
+    
+    // Mock events data
+    const events = [
+      {
+        id: Date.now(),
+        type: 'post_completed',
+        platform: 'instagram',
+        message: 'Post published successfully',
+        timestamp: new Date().toISOString()
+      }
+    ];
+    
+    res.json({ success: true, events });
+  } catch (err) {
+    console.error('[EVENTS ERROR]', err);
+    res.status(500).json({ error: 'Failed to get events' });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -316,6 +445,12 @@ const startServer = async () => {
     console.log('   POST /api/settings - Save settings');
     console.log('   POST /api/autopost/run-now - Queue video for posting');
     console.log('   GET  /api/scheduler/status - Get queue status');
+    console.log('   GET  /api/chart/status - Chart data for dashboard');
+    console.log('   GET  /api/activity/feed - Activity feed');
+    console.log('   GET  /api/autopilot/activity - Autopilot activity');
+    console.log('   GET  /api/instagram/analytics - Instagram analytics');
+    console.log('   GET  /api/youtube/analytics - YouTube analytics');
+    console.log('   GET  /api/events/recent - Real-time events');
   });
 };
 
