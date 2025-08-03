@@ -71,7 +71,13 @@ const settingsSchema = new mongoose.Schema({
     default: 'app_settings'
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  _id: false
+});
+
+// Override the _id field to use string
+settingsSchema.add({
+  _id: { type: String, default: 'app_settings' }
 });
 
 module.exports = mongoose.model('Settings', settingsSchema);

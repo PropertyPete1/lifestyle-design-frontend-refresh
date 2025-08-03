@@ -211,11 +211,12 @@ app.post('/api/settings', async (req, res) => {
     
     const { settings } = req.body;
     
-    // Get or create settings document
-    let dbSettings = await Settings.findById('app_settings');
-    if (!dbSettings) {
-      dbSettings = new Settings({ _id: 'app_settings' });
-    }
+    // Get or create settings document using findOneAndUpdate
+    let dbSettings = await Settings.findOneAndUpdate(
+      { _id: 'app_settings' },
+      {},
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
     
     // Update settings from request - handle both new format and legacy format
     if (settings.instagram) {
@@ -263,8 +264,11 @@ app.post('/api/settings', async (req, res) => {
     
   } catch (err) {
     console.error('[SETTINGS POST ERROR]', err);
+    console.error('[SETTINGS POST ERROR] Error message:', err.message);
+    console.error('[SETTINGS POST ERROR] Error stack:', err.stack);
     res.status(500).json({ 
       error: 'Failed to save settings',
+      details: err.message,
       success: false 
     });
   }
