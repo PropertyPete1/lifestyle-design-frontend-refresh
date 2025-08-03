@@ -16,7 +16,8 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:3001', 
     'https://frontend-v2-sage.vercel.app',
-    'https://lifestyle-design-social.vercel.app'
+    'https://lifestyle-design-social.vercel.app',
+    'https://lifestyle-design-frontend-v2.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -97,6 +98,67 @@ const autopilotQueueSchema = new mongoose.Schema({
 });
 
 const AutopilotQueue = mongoose.model('AutopilotQueue', autopilotQueueSchema);
+
+// Settings endpoints
+app.get('/api/settings', async (req, res) => {
+  try {
+    console.log('⚙️  [SETTINGS] GET request received');
+    
+    // Return mock settings for now - you can connect to real settings later
+    const settings = {
+      instagram: {
+        accessToken: process.env.INSTAGRAM_ACCESS_TOKEN ? 'configured' : null,
+        pageId: process.env.INSTAGRAM_PAGE_ID ? 'configured' : null
+      },
+      youtube: {
+        clientId: process.env.YOUTUBE_CLIENT_ID ? 'configured' : null,
+        clientSecret: process.env.YOUTUBE_CLIENT_SECRET ? 'configured' : null
+      },
+      s3: {
+        accessKey: process.env.AWS_ACCESS_KEY_ID ? 'configured' : null,
+        secretKey: process.env.AWS_SECRET_ACCESS_KEY ? 'configured' : null,
+        bucket: process.env.AWS_S3_BUCKET ? 'configured' : null
+      },
+      openai: {
+        apiKey: process.env.OPENAI_API_KEY ? 'configured' : null
+      }
+    };
+    
+    console.log('⚙️  [SETTINGS] Settings retrieved successfully');
+    res.status(200).json({ success: true, settings });
+    
+  } catch (err) {
+    console.error('[SETTINGS GET ERROR]', err);
+    res.status(500).json({ 
+      error: 'Failed to get settings',
+      success: false 
+    });
+  }
+});
+
+app.post('/api/settings', async (req, res) => {
+  try {
+    console.log('⚙️  [SETTINGS] POST request received:', req.body);
+    
+    // For now, just acknowledge the settings were received
+    // You can add actual settings storage to MongoDB later
+    const { settings } = req.body;
+    
+    console.log('⚙️  [SETTINGS] Settings saved successfully');
+    res.status(200).json({ 
+      success: true, 
+      message: 'Settings saved successfully',
+      settings: settings 
+    });
+    
+  } catch (err) {
+    console.error('[SETTINGS POST ERROR]', err);
+    res.status(500).json({ 
+      error: 'Failed to save settings',
+      success: false 
+    });
+  }
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -250,6 +312,8 @@ const startServer = async () => {
     console.log('🚀 [SERVER] Backend v2 running on port', PORT);
     console.log('📋 [SERVER] Available endpoints:');
     console.log('   GET  /api/health - Health check');
+    console.log('   GET  /api/settings - Get settings');
+    console.log('   POST /api/settings - Save settings');
     console.log('   POST /api/autopost/run-now - Queue video for posting');
     console.log('   GET  /api/scheduler/status - Get queue status');
   });
