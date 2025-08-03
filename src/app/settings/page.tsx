@@ -212,7 +212,7 @@ export default function Settings() {
         dropboxSave
       };
       
-      await api.post('/settings', data);
+      await api.post('/settings', { settings: data });
       showNotification('✅ All settings saved successfully!');
     } catch (error) {
       console.error('Failed to save settings:', error);
