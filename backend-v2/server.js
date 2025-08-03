@@ -7,6 +7,7 @@ require('dotenv/config');
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const { MongoClient } = require('mongodb');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -106,7 +107,7 @@ app.post('/api/autopost/run-now', async (req, res) => {
 
     // Insert into autopilot_queue collection
     const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/lifestyle-design';
-    const client = require('mongodb').MongoClient;
+    const client = new MongoClient(mongoUrl);
     
     try {
       await client.connect();
@@ -156,7 +157,12 @@ app.post('/api/autopost/run-now', async (req, res) => {
     
   } catch (err) {
     console.error('[RunNowToQueue ERROR]', err);
-    res.status(500).json({ error: 'Failed to queue video', success: false });
+    res.status(500).json({ 
+      error: 'Failed to queue video', 
+      success: false,
+      details: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 });
 
@@ -166,7 +172,7 @@ app.get('/api/scheduler/status', async (req, res) => {
     console.log('📊 [SCHEDULER STATUS] Fetching queue status...');
     
     const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/lifestyle-design';
-    const client = require('mongodb').MongoClient;
+    const client = new MongoClient(mongoUrl);
     
     try {
       await client.connect();
@@ -208,7 +214,9 @@ app.get('/api/scheduler/status', async (req, res) => {
       error: 'Failed to get scheduler status',
       nextOptimalTime: null,
       totalQueued: 0,
-      queuedVideos: []
+      queuedVideos: [],
+      details: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 });
