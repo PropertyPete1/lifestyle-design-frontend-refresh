@@ -6,6 +6,7 @@ require('dotenv/config');
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const Settings = require('./src/models/settings');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -25,8 +26,14 @@ app.use(cors({
       'https://lifestyle-design-frontend-v2-git-main-peter-allens-projects.vercel.app'
     ];
     
-    // Allow any Vercel deployment URL for your project
-    const isVercelDomain = origin.includes('lifestyle-design-frontend') && origin.includes('vercel.app');
+    // Allow any Vercel deployment URL for your project (handles random deployment IDs)
+    const isVercelDomain = (
+      origin.includes('lifestyle-design-frontend') && 
+      origin.includes('vercel.app')
+    ) || (
+      origin.includes('peter-allens-projects.vercel.app') &&
+      origin.includes('lifestyle-design-frontend')
+    );
     
     if (allowedOrigins.includes(origin) || isVercelDomain) {
       return callback(null, true);
@@ -120,23 +127,32 @@ app.get('/api/settings', async (req, res) => {
   try {
     console.log('⚙️  [SETTINGS] GET request received');
     
-    // Return mock settings for now - you can connect to real settings later
+    // Get settings from database
+    let dbSettings = await Settings.findById('app_settings');
+    
+    // If no settings exist, create default ones
+    if (!dbSettings) {
+      dbSettings = new Settings({ _id: 'app_settings' });
+      await dbSettings.save();
+    }
+    
+    // Format response with actual values and environment fallbacks
     const settings = {
       instagram: {
-        accessToken: process.env.INSTAGRAM_ACCESS_TOKEN ? 'configured' : null,
-        pageId: process.env.INSTAGRAM_PAGE_ID ? 'configured' : null
+        accessToken: dbSettings.instagramAccessToken || (process.env.INSTAGRAM_ACCESS_TOKEN ? 'configured' : null),
+        pageId: dbSettings.instagramPageId || (process.env.INSTAGRAM_PAGE_ID ? 'configured' : null)
       },
       youtube: {
-        clientId: process.env.YOUTUBE_CLIENT_ID ? 'configured' : null,
-        clientSecret: process.env.YOUTUBE_CLIENT_SECRET ? 'configured' : null
+        clientId: dbSettings.youtubeClientId || (process.env.YOUTUBE_CLIENT_ID ? 'configured' : null),
+        clientSecret: dbSettings.youtubeClientSecret || (process.env.YOUTUBE_CLIENT_SECRET ? 'configured' : null)
       },
       s3: {
-        accessKey: process.env.AWS_ACCESS_KEY_ID ? 'configured' : null,
-        secretKey: process.env.AWS_SECRET_ACCESS_KEY ? 'configured' : null,
-        bucket: process.env.AWS_S3_BUCKET ? 'configured' : null
+        accessKey: dbSettings.s3AccessKey || (process.env.AWS_ACCESS_KEY_ID ? 'configured' : null),
+        secretKey: dbSettings.s3SecretKey || (process.env.AWS_SECRET_ACCESS_KEY ? 'configured' : null),
+        bucket: dbSettings.s3Bucket || (process.env.AWS_S3_BUCKET ? 'configured' : null)
       },
       openai: {
-        apiKey: process.env.OPENAI_API_KEY ? 'configured' : null
+        apiKey: dbSettings.openaiApiKey || (process.env.OPENAI_API_KEY ? 'configured' : null)
       }
     };
     
@@ -154,13 +170,44 @@ app.get('/api/settings', async (req, res) => {
 
 app.post('/api/settings', async (req, res) => {
   try {
-    console.log('⚙️  [SETTINGS] POST request received:', req.body);
+    console.log('⚙️  [SETTINGS] POST request received');
     
-    // For now, just acknowledge the settings were received
-    // You can add actual settings storage to MongoDB later
     const { settings } = req.body;
     
-    console.log('⚙️  [SETTINGS] Settings saved successfully');
+    // Get or create settings document
+    let dbSettings = await Settings.findById('app_settings');
+    if (!dbSettings) {
+      dbSettings = new Settings({ _id: 'app_settings' });
+    }
+    
+    // Update settings from request
+    if (settings.instagram) {
+      if (settings.instagram.accessToken) dbSettings.instagramAccessToken = settings.instagram.accessToken;
+      if (settings.instagram.pageId) dbSettings.instagramPageId = settings.instagram.pageId;
+    }
+    
+    if (settings.youtube) {
+      if (settings.youtube.clientId) dbSettings.youtubeClientId = settings.youtube.clientId;
+      if (settings.youtube.clientSecret) dbSettings.youtubeClientSecret = settings.youtube.clientSecret;
+    }
+    
+    if (settings.s3) {
+      if (settings.s3.accessKey) dbSettings.s3AccessKey = settings.s3.accessKey;
+      if (settings.s3.secretKey) dbSettings.s3SecretKey = settings.s3.secretKey;
+      if (settings.s3.bucket) dbSettings.s3Bucket = settings.s3.bucket;
+    }
+    
+    if (settings.openai) {
+      if (settings.openai.apiKey) dbSettings.openaiApiKey = settings.openai.apiKey;
+    }
+    
+    // Update timestamp
+    dbSettings.lastUpdated = new Date();
+    
+    // Save to database
+    await dbSettings.save();
+    
+    console.log('⚙️  [SETTINGS] Settings saved successfully to database');
     res.status(200).json({ 
       success: true, 
       message: 'Settings saved successfully',
