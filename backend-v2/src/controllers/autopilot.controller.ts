@@ -119,7 +119,7 @@ export const runAutoPilot = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'AutoPilot process failed',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       videosProcessed: 0
     });
   }
@@ -230,7 +230,7 @@ export const runAutoPilotBatch = async (req: Request, res: Response) => {
               $set: { 
                 status: 'failed',
                 failedAt: new Date(),
-                error: error.message
+                error: error instanceof Error ? error.message : 'Unknown error'
               } 
             }
           );
@@ -255,7 +255,7 @@ export const runAutoPilotBatch = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Batch processing failed',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       videosProcessed: 0
     });
   }

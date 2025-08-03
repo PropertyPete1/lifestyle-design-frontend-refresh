@@ -56,7 +56,7 @@ app.get('/health', (req, res) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (req: express.Request, res: express.Response) => {
   res.status(404).json({
     error: 'Endpoint not found',
     service: 'backend-v2',

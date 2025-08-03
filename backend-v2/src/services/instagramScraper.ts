@@ -27,7 +27,7 @@ export const getRecentInstagramPosts = async (accessToken: string, limit: number
       throw new Error(`Instagram API error: ${response.status} - ${response.statusText}`);
     }
     
-    const data = await response.json();
+    const data: any = await response.json();
     console.log('📱 [INSTAGRAM SCRAPER] Retrieved', data.data?.length || 0, 'posts');
     
     return data.data || [];

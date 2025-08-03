@@ -6,7 +6,7 @@ import autopilotRouter from './api/autopilot';
 const router = express.Router();
 
 // Health check endpoint
-router.get('/health', (req, res) => {
+router.get('/health', (req: express.Request, res: express.Response) => {
   res.json({
     status: 'ok',
     service: 'backend-v2',

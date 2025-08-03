@@ -100,7 +100,7 @@ export const postVideoWithCleanup = async (
     return {
       success: false,
       message: 'Video posting failed due to system error',
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 };
@@ -131,7 +131,7 @@ async function postToInstagram(videoPath: string, caption: string): Promise<Post
     return {
       success: false,
       message: 'Failed to post to Instagram',
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }
@@ -162,7 +162,7 @@ async function postToYouTube(videoPath: string, caption: string): Promise<Postin
     return {
       success: false,
       message: 'Failed to upload to YouTube',
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }
