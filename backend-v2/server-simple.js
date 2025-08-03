@@ -146,15 +146,40 @@ app.get('/api/settings', async (req, res) => {
       await dbSettings.save();
     }
     
-    // Format response with actual values and environment fallbacks
+    // Format response in the format the frontend expects (legacy field names)
     const settings = {
+      // Legacy format for frontend compatibility
+      instagramToken: dbSettings.instagramAccessToken || (process.env.INSTAGRAM_ACCESS_TOKEN ? 'configured' : null),
+      instagramAccount: dbSettings.instagramPageId || (process.env.INSTAGRAM_PAGE_ID ? 'configured' : null),
+      facebookPage: dbSettings.facebookPageId || null,
+      
+      // YouTube - all fields the frontend expects + new ones
+      youtubeToken: dbSettings.youtubeAccessToken || (process.env.YOUTUBE_ACCESS_TOKEN ? 'configured' : null),
+      youtubeRefresh: dbSettings.youtubeRefreshToken || (process.env.YOUTUBE_REFRESH_TOKEN ? 'configured' : null),
+      youtubeChannel: dbSettings.youtubeChannelId || (process.env.YOUTUBE_CHANNEL_ID ? 'configured' : null),
+      youtubeClientId: dbSettings.youtubeClientId || (process.env.YOUTUBE_CLIENT_ID ? 'configured' : null),
+      youtubeClientSecret: dbSettings.youtubeClientSecret || (process.env.YOUTUBE_CLIENT_SECRET ? 'configured' : null),
+      
+      // S3 settings
+      s3AccessKey: dbSettings.s3AccessKey || (process.env.AWS_ACCESS_KEY_ID ? 'configured' : null),
+      s3SecretKey: dbSettings.s3SecretKey || (process.env.AWS_SECRET_ACCESS_KEY ? 'configured' : null),
+      s3Bucket: dbSettings.s3Bucket || (process.env.AWS_S3_BUCKET ? 'configured' : null),
+      s3Region: dbSettings.s3Region || (process.env.AWS_REGION ? 'configured' : null),
+      
+      // Other APIs
+      openaiApi: dbSettings.openaiApiKey || (process.env.OPENAI_API_KEY ? 'configured' : null),
+      
+      // New structured format (for future use)
       instagram: {
         accessToken: dbSettings.instagramAccessToken || (process.env.INSTAGRAM_ACCESS_TOKEN ? 'configured' : null),
         pageId: dbSettings.instagramPageId || (process.env.INSTAGRAM_PAGE_ID ? 'configured' : null)
       },
       youtube: {
         clientId: dbSettings.youtubeClientId || (process.env.YOUTUBE_CLIENT_ID ? 'configured' : null),
-        clientSecret: dbSettings.youtubeClientSecret || (process.env.YOUTUBE_CLIENT_SECRET ? 'configured' : null)
+        clientSecret: dbSettings.youtubeClientSecret || (process.env.YOUTUBE_CLIENT_SECRET ? 'configured' : null),
+        accessToken: dbSettings.youtubeAccessToken || (process.env.YOUTUBE_ACCESS_TOKEN ? 'configured' : null),
+        refreshToken: dbSettings.youtubeRefreshToken || (process.env.YOUTUBE_REFRESH_TOKEN ? 'configured' : null),
+        channelId: dbSettings.youtubeChannelId || (process.env.YOUTUBE_CHANNEL_ID ? 'configured' : null)
       },
       s3: {
         accessKey: dbSettings.s3AccessKey || (process.env.AWS_ACCESS_KEY_ID ? 'configured' : null),
@@ -192,16 +217,26 @@ app.post('/api/settings', async (req, res) => {
       dbSettings = new Settings({ _id: 'app_settings' });
     }
     
-    // Update settings from request
+    // Update settings from request - handle both new format and legacy format
     if (settings.instagram) {
       if (settings.instagram.accessToken) dbSettings.instagramAccessToken = settings.instagram.accessToken;
       if (settings.instagram.pageId) dbSettings.instagramPageId = settings.instagram.pageId;
     }
     
+    // Handle legacy frontend format (direct field names)
+    if (settings.instagramToken) dbSettings.instagramAccessToken = settings.instagramToken;
+    if (settings.instagramAccount) dbSettings.instagramPageId = settings.instagramAccount;
+    if (settings.facebookPage) dbSettings.facebookPageId = settings.facebookPage;
+    
     if (settings.youtube) {
       if (settings.youtube.clientId) dbSettings.youtubeClientId = settings.youtube.clientId;
       if (settings.youtube.clientSecret) dbSettings.youtubeClientSecret = settings.youtube.clientSecret;
     }
+    
+    // Handle legacy YouTube fields from frontend
+    if (settings.youtubeToken) dbSettings.youtubeAccessToken = settings.youtubeToken;
+    if (settings.youtubeRefresh) dbSettings.youtubeRefreshToken = settings.youtubeRefresh;
+    if (settings.youtubeChannel) dbSettings.youtubeChannelId = settings.youtubeChannel;
     
     if (settings.s3) {
       if (settings.s3.accessKey) dbSettings.s3AccessKey = settings.s3.accessKey;

@@ -11,12 +11,30 @@ const settingsSchema = new mongoose.Schema({
     default: null
   },
   
-  // YouTube settings
+  // YouTube settings - all credentials needed for posting
   youtubeClientId: {
     type: String,
     default: null
   },
   youtubeClientSecret: {
+    type: String,
+    default: null
+  },
+  youtubeAccessToken: {
+    type: String,
+    default: null
+  },
+  youtubeRefreshToken: {
+    type: String,
+    default: null
+  },
+  youtubeChannelId: {
+    type: String,
+    default: null
+  },
+  
+  // Facebook/Meta fields
+  facebookPageId: {
     type: String,
     default: null
   },
