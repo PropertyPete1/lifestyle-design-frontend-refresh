@@ -122,6 +122,16 @@ const autopilotQueueSchema = new mongoose.Schema({
 
 const AutopilotQueue = mongoose.model('AutopilotQueue', autopilotQueueSchema);
 
+// Handle CORS preflight for settings
+app.options('/api/settings', (req, res) => {
+  console.log('⚙️  [SETTINGS] OPTIONS preflight request received');
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 // Settings endpoints
 app.get('/api/settings', async (req, res) => {
   try {
@@ -171,6 +181,8 @@ app.get('/api/settings', async (req, res) => {
 app.post('/api/settings', async (req, res) => {
   try {
     console.log('⚙️  [SETTINGS] POST request received');
+    console.log('⚙️  [SETTINGS] Request body:', JSON.stringify(req.body, null, 2));
+    console.log('⚙️  [SETTINGS] Request headers:', JSON.stringify(req.headers, null, 2));
     
     const { settings } = req.body;
     
