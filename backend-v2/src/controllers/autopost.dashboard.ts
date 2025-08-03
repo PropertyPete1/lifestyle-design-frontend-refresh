@@ -79,7 +79,7 @@ export const runNowToQueue = async (req: Request, res: Response) => {
 };
 
 /**
- * STEP 2: Scheduler status endpoint - Check autopilot_queue collection
+ * STEP 4: Scheduler status endpoint - Return exact format specified
  */
 export const getSchedulerStatus = async (req: Request, res: Response) => {
   try {
@@ -94,27 +94,41 @@ export const getSchedulerStatus = async (req: Request, res: Response) => {
       const db = client.db();
       const queue = db.collection('autopilot_queue');
       
-      // Get pending posts from autopilot_queue
+      // Get all pending posts from autopilot_queue (sorted by scheduledAt)
       const queuedPosts = await queue.find({
         status: 'pending'
-      }).sort({ scheduledAt: 1 }).limit(10).toArray();
+      }).sort({ scheduledAt: 1 }).toArray();
       
-      const statusData = {
-        running: queuedPosts.length > 0,
-        queuedPosts: queuedPosts.length,
-        nextScheduledPost: queuedPosts.length > 0 ? queuedPosts[0].scheduledAt : null,
-        posts: queuedPosts.map(post => ({
-          id: post._id,
-          filename: post.filename,
-          platform: post.platform,
-          scheduledAt: post.scheduledAt,
-          status: post.status,
-          insertedAt: post.insertedAt
-        }))
+      // Count total queued videos
+      const totalQueued = queuedPosts.length;
+      
+      // Get next optimal time (earliest scheduled time)
+      const nextOptimalTime = queuedPosts.length > 0 ? queuedPosts[0].scheduledAt : null;
+      
+      // Format queued videos with caption preview (first 50 chars)
+      const queuedVideos = queuedPosts.slice(0, 10).map(post => ({
+        filename: post.filename || 'unknown.mp4',
+        captionPreview: post.caption ? 
+          (post.caption.length > 50 ? post.caption.substring(0, 47) + '...' : post.caption) : 
+          'No caption...',
+        platform: post.platform || 'instagram',
+        scheduledFor: post.scheduledAt
+      }));
+      
+      // STEP 4: Return exact format specified
+      const responseData = {
+        nextOptimalTime,
+        totalQueued,
+        queuedVideos
       };
 
-      console.log('📊 [SCHEDULER STATUS] Queue status retrieved:', statusData);
-      res.status(200).json({ success: true, data: statusData });
+      console.log('📊 [SCHEDULER STATUS] Status data formatted:', {
+        nextOptimalTime: responseData.nextOptimalTime,
+        totalQueued: responseData.totalQueued,
+        queuedVideosCount: responseData.queuedVideos.length
+      });
+      
+      res.status(200).json(responseData);
       
     } finally {
       await client.close();
@@ -122,6 +136,11 @@ export const getSchedulerStatus = async (req: Request, res: Response) => {
     
   } catch (err) {
     console.error('[SCHEDULER STATUS ERROR]', err);
-    res.status(500).json({ error: 'Failed to get scheduler status', success: false });
+    res.status(500).json({ 
+      error: 'Failed to get scheduler status',
+      nextOptimalTime: null,
+      totalQueued: 0,
+      queuedVideos: []
+    });
   }
 };
