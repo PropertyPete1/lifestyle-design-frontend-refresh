@@ -24,6 +24,12 @@ const activityLogSchema = new mongoose.Schema({
     required: true
   },
   
+  // Scheduled posting time (for queue entries)
+  scheduledAt: {
+    type: Date,
+    required: false
+  },
+  
   // Activity tracking fields
   type: {
     type: String,
