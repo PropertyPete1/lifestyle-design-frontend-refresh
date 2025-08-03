@@ -12,13 +12,29 @@ const PORT = process.env.PORT || 3002;
 
 // CORS configuration
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001', 
-    'https://frontend-v2-sage.vercel.app',
-    'https://lifestyle-design-social.vercel.app',
-    'https://lifestyle-design-frontend-v2.vercel.app'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'https://frontend-v2-sage.vercel.app',
+      'https://lifestyle-design-social.vercel.app',
+      'https://lifestyle-design-frontend-v2.vercel.app',
+      'https://lifestyle-design-frontend-v2-git-main-peter-allens-projects.vercel.app'
+    ];
+    
+    // Allow any Vercel deployment URL for your project
+    const isVercelDomain = origin.includes('lifestyle-design-frontend') && origin.includes('vercel.app');
+    
+    if (allowedOrigins.includes(origin) || isVercelDomain) {
+      return callback(null, true);
+    }
+    
+    console.log('⚠️  CORS rejected origin:', origin);
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
