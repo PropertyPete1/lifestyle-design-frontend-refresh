@@ -2,9 +2,10 @@
   "name": "lifestyle-design-backend-v2",
   "version": "2.0.0",
   "description": "Backend v2 for Lifestyle Design Auto Poster with clean autopilot system",
-  "main": "dist/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "node server.js",
+    "start-ts": "node dist/server.js",
     "dev": "npx ts-node --transpile-only server.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,14 +21,13 @@
     "fluent-ffmpeg": "^2.1.2"
   },
   "devDependencies": {
-    "@types/express": "^4.17.17",
-    "@types/node": "^20.5.0",
-    "@types/cors": "^2.8.13",
-    "@types/multer": "^1.4.7",
-    "@types/fluent-ffmpeg": "^2.1.21",
-    "@types/mongoose": "^7.5.0",
-    "typescript": "^5.1.6",
-    "ts-node": "^10.9.1"
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "@types/cors": "^2.8.17",
+    "@types/multer": "^1.4.11",
+    "@types/fluent-ffmpeg": "^2.1.24",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
   },
   "keywords": [
     "autopilot",
