@@ -103,11 +103,18 @@ export default function Settings() {
 
   const loadSettings = async () => {
     try {
+      console.log('🔄 Starting loadSettings...');
       const response = await api.get('/settings');
       console.log('🔍 Full backend response:', response);
+      
       if (response && response.settings) {
         const settings = response.settings;
         console.log('📋 Settings data:', settings);
+        
+        // 🧪 TEST: Log individual field loading
+        console.log('🔧 Loading Instagram Token:', settings.instagramToken?.substring(0, 20) + '...');
+        console.log('🔧 Loading YouTube Token:', settings.youtubeToken);
+        console.log('🔧 Loading YouTube Channel:', settings.youtubeChannel);
         
         // Core credentials - EXACT MongoDB field names from API response
         setInstagramToken(settings.instagramToken || '');
@@ -120,6 +127,13 @@ export default function Settings() {
         setYoutubeClientSecret(settings.youtubeClientSecret || '');
         setDropboxToken(settings.dropboxToken || '');
         setMongodbUri(settings.mongodbUri || '');
+        
+        // 🧪 TEST: Verify state was set
+        setTimeout(() => {
+          console.log('✅ State check - Instagram Token length:', instagramToken.length);
+          console.log('✅ State check - YouTube Token:', youtubeToken);
+          console.log('✅ State check - YouTube Channel:', youtubeChannel);
+        }, 100);
         
         // Optional credentials
         setRunwayApi(settings.runwayApi || '');
@@ -341,16 +355,18 @@ export default function Settings() {
           </div>
           
           <div className="form-group">
-            <label className="form-label">📸 Instagram Access Token</label>
+            <label className="form-label">📸 Instagram Access Token {instagramToken ? '✅' : '❌'}</label>
             <input 
               type="text" 
               className="form-input" 
               placeholder="Enter Instagram access token..." 
               value={instagramToken}
               onChange={(e) => setInstagramToken(e.target.value)}
-              style={{fontFamily: 'monospace', fontSize: '0.9rem'}}
+              style={{fontFamily: 'monospace', fontSize: '0.9rem', backgroundColor: instagramToken ? '#1a4d1a' : 'transparent'}}
             />
-            <small style={{color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem'}}>Enables posting and scraping IG data</small>
+            <small style={{color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem'}}>
+              Enables posting and scraping IG data {instagramToken ? `(${instagramToken.length} chars loaded)` : '(empty)'}
+            </small>
           </div>
 
           <div className="form-group">
@@ -378,16 +394,18 @@ export default function Settings() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">📺 YouTube Token</label>
+            <label className="form-label">📺 YouTube Token {youtubeToken ? '✅' : '❌'}</label>
             <input 
               type="text" 
               className="form-input" 
               placeholder="Enter YouTube token..." 
               value={youtubeToken}
               onChange={(e) => setYoutubeToken(e.target.value)}
-              style={{fontFamily: 'monospace', fontSize: '0.9rem'}}
+              style={{fontFamily: 'monospace', fontSize: '0.9rem', backgroundColor: youtubeToken ? '#1a4d1a' : 'transparent'}}
             />
-            <small style={{color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem'}}>Enables posting via YouTube Data API</small>
+            <small style={{color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem'}}>
+              Enables posting via YouTube Data API {youtubeToken ? `(${youtubeToken.length} chars)` : '(empty)'}
+            </small>
           </div>
 
           <div className="form-group">
