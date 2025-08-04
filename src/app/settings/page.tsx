@@ -96,12 +96,14 @@ export default function Settings() {
   const [aiCaptions, setAiCaptions] = useState(true);
   const [dropboxSave, setDropboxSave] = useState(false);
 
-  // 🛡️ State to prevent multiple loads
+  // 🛡️ State to prevent multiple loads and handle SSR
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  // Load settings on component mount
+  // Detect client-side mount (fix for Next.js SSR)
   useEffect(() => {
-    console.log('🔄 Component mounted, loading settings...');
+    setIsClient(true);
+    console.log('🔄 Client-side mounted, loading settings...');
     loadSettings();
   }, []); // Empty dependency array = run once on mount
 
@@ -337,6 +339,31 @@ export default function Settings() {
       }
     }, 3000);
   };
+
+  // Show loading state during SSR/hydration
+  if (!isClient) {
+    return (
+      <div className="settings-container">
+        <div className="header">
+          <button className="back-btn" onClick={goBack}>
+            ← Back to Dashboard
+          </button>
+          <h1 className="page-title">Settings</h1>
+          <div></div>
+        </div>
+        <div style={{
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '400px',
+          fontSize: '1.2rem',
+          color: '#fff'
+        }}>
+          🔄 Loading settings...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="settings-container">
