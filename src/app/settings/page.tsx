@@ -104,9 +104,12 @@ export default function Settings() {
   const loadSettings = async () => {
     try {
       const response = await api.get('/settings');
+      console.log('🔍 Full backend response:', response);
       if (response && response.settings) {
         const settings = response.settings;
-        // Core credentials - using exact MongoDB schema field names
+        console.log('📋 Settings data:', settings);
+        
+        // Core credentials - EXACT MongoDB field names from API response
         setInstagramToken(settings.instagramToken || '');
         setInstagramAccount(settings.instagramAccount || '');
         setFacebookPage(settings.facebookPage || '');
