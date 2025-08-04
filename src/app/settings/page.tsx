@@ -99,14 +99,11 @@ export default function Settings() {
   // 🛡️ State to prevent multiple loads
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-  // Load settings on component mount ONLY ONCE
+  // Load settings on component mount
   useEffect(() => {
-    if (!settingsLoaded) {
-      console.log('🔄 Loading settings for the first time...');
-      loadSettings();
-      setSettingsLoaded(true);
-    }
-  }, [settingsLoaded]);
+    console.log('🔄 Component mounted, loading settings...');
+    loadSettings();
+  }, []); // Empty dependency array = run once on mount
 
   const loadSettings = async () => {
     try {
@@ -123,27 +120,30 @@ export default function Settings() {
         console.log('🔧 Loading YouTube Token:', settings.youtubeToken);
         console.log('🔧 Loading YouTube Channel:', settings.youtubeChannel);
         
-        // 🛡️ ONLY SET STATE IF FIELDS ARE EMPTY (don't overwrite user typing!)
-        if (!instagramToken && settings.instagramToken) setInstagramToken(settings.instagramToken);
-        if (!instagramAccount && settings.instagramAccount) setInstagramAccount(settings.instagramAccount);
-        if (!facebookPage && settings.facebookPage) setFacebookPage(settings.facebookPage);
-        if (!youtubeToken && settings.youtubeToken) setYoutubeToken(settings.youtubeToken);
-        if (!youtubeRefresh && settings.youtubeRefresh) setYoutubeRefresh(settings.youtubeRefresh);
-        if (!youtubeChannel && settings.youtubeChannel) setYoutubeChannel(settings.youtubeChannel);
-        if (!youtubeClientId && settings.youtubeClientId) setYoutubeClientId(settings.youtubeClientId);
-        if (!youtubeClientSecret && settings.youtubeClientSecret) setYoutubeClientSecret(settings.youtubeClientSecret);
-        if (!dropboxToken && settings.dropboxToken) setDropboxToken(settings.dropboxToken);
-        if (!mongodbUri && settings.mongodbUri) setMongodbUri(settings.mongodbUri);
+        // 🛡️ Load initial values OR preserve user typing
+        if (!settingsLoaded || !instagramToken) setInstagramToken(settings.instagramToken || '');
+        if (!settingsLoaded || !instagramAccount) setInstagramAccount(settings.instagramAccount || '');
+        if (!settingsLoaded || !facebookPage) setFacebookPage(settings.facebookPage || '');
+        if (!settingsLoaded || !youtubeToken) setYoutubeToken(settings.youtubeToken || '');
+        if (!settingsLoaded || !youtubeRefresh) setYoutubeRefresh(settings.youtubeRefresh || '');
+        if (!settingsLoaded || !youtubeChannel) setYoutubeChannel(settings.youtubeChannel || '');
+        if (!settingsLoaded || !youtubeClientId) setYoutubeClientId(settings.youtubeClientId || '');
+        if (!settingsLoaded || !youtubeClientSecret) setYoutubeClientSecret(settings.youtubeClientSecret || '');
+        if (!settingsLoaded || !dropboxToken) setDropboxToken(settings.dropboxToken || '');
+        if (!settingsLoaded || !mongodbUri) setMongodbUri(settings.mongodbUri || '');
+        
+        // Mark as loaded
+        setSettingsLoaded(true);
         
         console.log('✅ Settings loaded without overwriting user input!');
         
-        // Optional credentials - also protect from overwriting user input
-        if (!runwayApi && settings.runwayApi) setRunwayApi(settings.runwayApi);
-        if (!openaiApi && settings.openaiApi) setOpenaiApi(settings.openaiApi);
-        if (!s3AccessKey && settings.s3AccessKey) setS3AccessKey(settings.s3AccessKey);
-        if (!s3SecretKey && settings.s3SecretKey) setS3SecretKey(settings.s3SecretKey);
-        if (!s3Bucket && settings.s3Bucket) setS3Bucket(settings.s3Bucket);
-        if (!s3Region && settings.s3Region) setS3Region(settings.s3Region);
+        // Optional credentials - load initial values OR preserve user typing
+        if (!settingsLoaded || !runwayApi) setRunwayApi(settings.runwayApi || '');
+        if (!settingsLoaded || !openaiApi) setOpenaiApi(settings.openaiApi || '');
+        if (!settingsLoaded || !s3AccessKey) setS3AccessKey(settings.s3AccessKey || '');
+        if (!settingsLoaded || !s3SecretKey) setS3SecretKey(settings.s3SecretKey || '');
+        if (!settingsLoaded || !s3Bucket) setS3Bucket(settings.s3Bucket || '');
+        if (!settingsLoaded || !s3Region) setS3Region(settings.s3Region || '');
         
         // Mode settings
         setAutopilotMode(settings.autopilot || false);
