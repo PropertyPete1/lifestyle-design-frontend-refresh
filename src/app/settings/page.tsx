@@ -179,43 +179,50 @@ export default function Settings() {
 
   const saveCredentials = async () => {
     try {
-      const data = {
-        instagramToken,
-        instagramAccount,
-        facebookPage,
-        youtubeToken,
-        youtubeRefresh,
-        youtubeChannel,
-        youtubeClientId,
-        youtubeClientSecret,
-        dropboxToken,
-        mongodbUri,
-        runwayApi,
-        openaiApi,
-        s3AccessKey,
-        s3SecretKey,
-        s3Bucket,
-        s3Region,
-        autopilot: autopilotMode,
-        manual: manualMode,
-        postTime,
-        peakHours,
-        maxPosts: parseInt(maxPosts),
-        repostDelay: parseInt(repostDelay),
-        thumbnailMode,
-        editorStyle,
-        cartoon: cartoonEnabled,
-        postToInstagram,
-        postToYouTube: postToYoutube,
-        crossPost,
-        dropboxFolder,
-        fileRetention: parseInt(fileRetention),
-        minViews: parseInt(minViews),
-        trendingAudio,
-        aiCaptions,
-        dropboxSave
-      };
+      // 🛡️ ONLY send fields that have values - don't overwrite existing credentials with empty strings!
+      const data: Record<string, any> = {};
       
+      // Core credentials - only if not empty
+      if (instagramToken.trim()) data.instagramToken = instagramToken;
+      if (instagramAccount.trim()) data.instagramAccount = instagramAccount;
+      if (facebookPage.trim()) data.facebookPage = facebookPage;
+      if (youtubeToken.trim()) data.youtubeToken = youtubeToken;
+      if (youtubeRefresh.trim()) data.youtubeRefresh = youtubeRefresh;
+      if (youtubeChannel.trim()) data.youtubeChannel = youtubeChannel;
+      if (youtubeClientId.trim()) data.youtubeClientId = youtubeClientId;
+      if (youtubeClientSecret.trim()) data.youtubeClientSecret = youtubeClientSecret;
+      if (dropboxToken.trim()) data.dropboxToken = dropboxToken;
+      if (mongodbUri.trim()) data.mongodbUri = mongodbUri;
+      
+      // Optional credentials - only if not empty
+      if (runwayApi.trim()) data.runwayApi = runwayApi;
+      if (openaiApi.trim()) data.openaiApi = openaiApi;
+      if (s3AccessKey.trim()) data.s3AccessKey = s3AccessKey;
+      if (s3SecretKey.trim()) data.s3SecretKey = s3SecretKey;
+      if (s3Bucket.trim()) data.s3Bucket = s3Bucket;
+      if (s3Region.trim()) data.s3Region = s3Region;
+      
+      // Always send settings (these have defaults)
+      data.autopilot = autopilotMode;
+      data.manual = manualMode;
+      data.postTime = postTime;
+      data.peakHours = peakHours;
+      data.maxPosts = parseInt(maxPosts);
+      data.repostDelay = parseInt(repostDelay);
+      data.thumbnailMode = thumbnailMode;
+      data.editorStyle = editorStyle;
+      data.cartoon = cartoonEnabled;
+      data.postToInstagram = postToInstagram;
+      data.postToYouTube = postToYoutube;
+      data.crossPost = crossPost;
+      data.dropboxFolder = dropboxFolder;
+      data.fileRetention = parseInt(fileRetention);
+      data.minViews = parseInt(minViews);
+      data.trendingAudio = trendingAudio;
+      data.aiCaptions = aiCaptions;
+      data.dropboxSave = dropboxSave;
+      
+      console.log('💾 Saving only filled fields:', data);
       await api.post('/settings', { settings: data });
       showNotification('✅ All settings saved successfully!');
     } catch (error) {
