@@ -241,7 +241,7 @@ export default function Settings() {
       data.dropboxSave = dropboxSave;
       
       console.log('💾 Saving only filled fields:', data);
-      await api.post('/settings', data);
+      await api.post('/settings', { settings: data });
       showNotification('✅ All settings saved successfully!');
     } catch (error) {
       console.error('Failed to save settings:', error);
