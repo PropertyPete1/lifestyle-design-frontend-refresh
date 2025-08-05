@@ -113,8 +113,8 @@ export default function Settings() {
       const response = await api.get('/settings');
       console.log('🔍 Full backend response:', response);
       
-      if (response) {
-        const settings = response;
+      if (response && response.settings) {
+        const settings = response.settings;
         console.log('📋 Settings data:', settings);
         
         // 🧪 TEST: Log individual field loading
@@ -124,15 +124,15 @@ export default function Settings() {
         
         // 🛡️ Load initial values OR preserve user typing
         if (!settingsLoaded || !instagramToken) setInstagramToken(settings.instagramToken || '');
-        if (!settingsLoaded || !instagramAccount) setInstagramAccount(settings.igBusinessId || '');
+        if (!settingsLoaded || !instagramAccount) setInstagramAccount(settings.instagramAccount || '');
         if (!settingsLoaded || !facebookPage) setFacebookPage(settings.facebookPage || '');
-        if (!settingsLoaded || !youtubeToken) setYoutubeToken(settings.youtubeAccessToken || '');
-        if (!settingsLoaded || !youtubeRefresh) setYoutubeRefresh(settings.youtubeRefreshToken || '');
-        if (!settingsLoaded || !youtubeChannel) setYoutubeChannel(settings.youtubeChannelId || '');
+        if (!settingsLoaded || !youtubeToken) setYoutubeToken(settings.youtubeToken || '');
+        if (!settingsLoaded || !youtubeRefresh) setYoutubeRefresh(settings.youtubeRefresh || '');
+        if (!settingsLoaded || !youtubeChannel) setYoutubeChannel(settings.youtubeChannel || '');
         if (!settingsLoaded || !youtubeClientId) setYoutubeClientId(settings.youtubeClientId || '');
         if (!settingsLoaded || !youtubeClientSecret) setYoutubeClientSecret(settings.youtubeClientSecret || '');
         if (!settingsLoaded || !dropboxToken) setDropboxToken(settings.dropboxToken || '');
-        if (!settingsLoaded || !mongodbUri) setMongodbUri(settings.mongoURI || '');
+        if (!settingsLoaded || !mongodbUri) setMongodbUri(settings.mongodbUri || '');
         
         // Mark as loaded
         setSettingsLoaded(true);
@@ -140,11 +140,11 @@ export default function Settings() {
         console.log('✅ Settings loaded without overwriting user input!');
         
         // Optional credentials - load initial values OR preserve user typing
-        if (!settingsLoaded || !runwayApi) setRunwayApi(settings.runwayApiKey || '');
-        if (!settingsLoaded || !openaiApi) setOpenaiApi(settings.openaiApiKey || '');
+        if (!settingsLoaded || !runwayApi) setRunwayApi(settings.runwayApi || '');
+        if (!settingsLoaded || !openaiApi) setOpenaiApi(settings.openaiApi || '');
         if (!settingsLoaded || !s3AccessKey) setS3AccessKey(settings.s3AccessKey || '');
         if (!settingsLoaded || !s3SecretKey) setS3SecretKey(settings.s3SecretKey || '');
-        if (!settingsLoaded || !s3Bucket) setS3Bucket(settings.s3BucketName || '');
+        if (!settingsLoaded || !s3Bucket) setS3Bucket(settings.s3Bucket || '');
         if (!settingsLoaded || !s3Region) setS3Region(settings.s3Region || '');
         
         // Mode settings
@@ -202,22 +202,22 @@ export default function Settings() {
       
       // Core credentials - only if not empty
       if (instagramToken.trim()) data.instagramToken = instagramToken;
-      if (instagramAccount.trim()) data.igBusinessId = instagramAccount;
+      if (instagramAccount.trim()) data.instagramAccount = instagramAccount;
       if (facebookPage.trim()) data.facebookPage = facebookPage;
-      if (youtubeToken.trim()) data.youtubeAccessToken = youtubeToken;
-      if (youtubeRefresh.trim()) data.youtubeRefreshToken = youtubeRefresh;
-      if (youtubeChannel.trim()) data.youtubeChannelId = youtubeChannel;
+      if (youtubeToken.trim()) data.youtubeToken = youtubeToken;
+      if (youtubeRefresh.trim()) data.youtubeRefresh = youtubeRefresh;
+      if (youtubeChannel.trim()) data.youtubeChannel = youtubeChannel;
       if (youtubeClientId.trim()) data.youtubeClientId = youtubeClientId;
       if (youtubeClientSecret.trim()) data.youtubeClientSecret = youtubeClientSecret;
       if (dropboxToken.trim()) data.dropboxToken = dropboxToken;
-      if (mongodbUri.trim()) data.mongoURI = mongodbUri;
+      if (mongodbUri.trim()) data.mongodbUri = mongodbUri;
       
       // Optional credentials - only if not empty
-      if (runwayApi.trim()) data.runwayApiKey = runwayApi;
-      if (openaiApi.trim()) data.openaiApiKey = openaiApi;
+      if (runwayApi.trim()) data.runwayApi = runwayApi;
+      if (openaiApi.trim()) data.openaiApi = openaiApi;
       if (s3AccessKey.trim()) data.s3AccessKey = s3AccessKey;
       if (s3SecretKey.trim()) data.s3SecretKey = s3SecretKey;
-      if (s3Bucket.trim()) data.s3BucketName = s3Bucket;
+      if (s3Bucket.trim()) data.s3Bucket = s3Bucket;
       if (s3Region.trim()) data.s3Region = s3Region;
       
       // Always send settings (these have defaults)

@@ -31,7 +31,6 @@ export const API_ENDPOINTS = {
   
   // Activity and analytics
   activityFeed: (limit?: number) => apiUrl(`api/activity/feed${limit ? `?limit=${limit}` : ''}`),
-  analytics: () => apiUrl('api/analytics'), // Unified analytics endpoint
   instagramAnalytics: () => apiUrl('api/instagram/analytics'),
   youtubeAnalytics: () => apiUrl('api/youtube/analytics'),
   
