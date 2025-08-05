@@ -604,14 +604,12 @@ export default function Dashboard() {
           const autopilotRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/autopilot/status`)
           if (autopilotRes.ok) {
             const autopilotData = await autopilotRes.json()
-            if (autopilotData.success) {
-              console.log('📊 Phase 9 Autopilot Status:', autopilotData)
-              setAutopilotRunning(autopilotData.autopilotEnabled || false)
-              
-              // Update queue size from autopilot data
-              if (autopilotData.queue) {
-                setQueueSize(autopilotData.queue.scheduled || 0)
-              }
+            console.log('📊 Phase 9 Autopilot Status:', autopilotData)
+            setAutopilotRunning(autopilotData.autopilotEnabled || false)
+            
+            // Update queue size from autopilot data
+            if (autopilotData.queueCount !== undefined) {
+              setQueueSize(autopilotData.queueCount || 0)
             }
           }
         } catch (autopilotErr) {
