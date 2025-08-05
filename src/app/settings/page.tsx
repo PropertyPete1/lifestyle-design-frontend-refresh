@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 
 // API configuration  
-const API_BASE_URL = 'https://lifestyle-design-backend-v2.onrender.com/api';
+const API_BASE_URL = 'https://lifestyle-design-backend-v2-clean.onrender.com/api';
 
 // API helper functions
 const api = {
