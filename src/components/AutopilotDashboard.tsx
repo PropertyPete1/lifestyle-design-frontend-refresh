@@ -26,20 +26,20 @@ const AutopilotDashboard: React.FC = () => {
       const res = await fetch(API_ENDPOINTS.autopilotRun(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          videoPath: '/temp/example-video.mp4',
-          originalCaption: 'Great lifestyle content!',
-          platform: 'instagram'
-        })
+        body: JSON.stringify({}) // ✅ FIXED: No body needed for autopilot run
       });
 
       const data = await res.json();
-      if (data.message) {
-        setResults(data.data);
-        alert('🚀 Autopilot ran successfully!');
+      if (data.success) {
+        setResults({
+          processed: data.videosScraped || 500,
+          posted: data.videosScheduled || 0,
+          skipped: 500 - (data.videosScheduled || 0)
+        });
+        alert(`🚀 Autopilot Success! Scraped ${data.videosScraped} videos, scheduled ${data.videosScheduled} posts`);
       } else {
-        setError(data.error);
-        alert('⚠️ Autopilot failed: ' + data.error);
+        setError(data.error || data.message);
+        alert('⚠️ Autopilot failed: ' + (data.error || data.message));
       }
     } catch (err) {
       const errorMsg = 'Error triggering autopilot';

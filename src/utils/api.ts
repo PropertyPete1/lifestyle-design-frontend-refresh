@@ -22,12 +22,12 @@ export const API_ENDPOINTS = {
   chartStatus: () => apiUrl('api/chart/status'),
   settings: () => apiUrl('api/settings'),
   
-  // Autopilot
-  autopilotRun: () => apiUrl('api/autopost/run-now'), // NEW SCHEDULING ENDPOINT
+  // Autopilot - Fixed to match backend endpoints
+  autopilotRun: () => apiUrl('api/autopilot/run'), // ✅ CORRECT AUTOPILOT ENDPOINT
   autopilotManualPost: () => apiUrl('api/autopilot/manual-post'),
   autopilotStatus: () => apiUrl('api/autopilot/status'),
   autopilotQueue: (limit?: number) => apiUrl(`api/autopilot/queue${limit ? `?limit=${limit}` : ''}`),
-  schedulerStatus: () => apiUrl('api/scheduler/status'), // NEW SCHEDULER ENDPOINT
+  schedulerStatus: () => apiUrl('api/scheduler/status'), // Enhanced scheduler endpoint
   
   // Activity and analytics
   analytics: () => apiUrl('api/analytics'), // UNIFIED ANALYTICS ENDPOINT

@@ -601,7 +601,7 @@ export default function Dashboard() {
 
         // Use Phase 9 autopilot status for real-time data
         try {
-          const autopilotRes = await fetch('https://lifestyle-design-backend-v2.onrender.com/api/autopilot/status')
+          const autopilotRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/autopilot/status`)
           if (autopilotRes.ok) {
             const autopilotData = await autopilotRes.json()
             if (autopilotData.success) {

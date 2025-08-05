@@ -140,8 +140,9 @@ export default function AutopilotPage() {
 
       // Load queue data from Phase 9 autopilot queue endpoint
       const queueRes = await api.get('/autopilot/queue');
-      if (queueRes.success && queueRes.queue) {
-        setQueueData(queueRes.queue || []);
+      console.log('📋 [QUEUE DATA] Response:', queueRes);
+      if (queueRes.posts) {
+        setQueueData(queueRes.posts || []); // ✅ FIXED: Use posts array from backend
       }
 
     } catch (error) {
