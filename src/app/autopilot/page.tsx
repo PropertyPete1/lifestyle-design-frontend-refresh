@@ -128,19 +128,20 @@ export default function AutopilotPage() {
           dropboxSave: settingsRes.dropboxSave || false,
           platforms: []
         });
-        setAutopilotActive(settingsRes.autopilot || false);
+        setAutopilotActive(settingsRes.autopilotEnabled || false);
       }
 
-      // Load autopilot status
+      // Load autopilot status from Phase 9 endpoint
       const statusRes = await api.get('/autopilot/status');
       if (statusRes.success) {
-        setAutopilotStatus(statusRes.data);
+        setAutopilotStatus(statusRes);
+        setAutopilotActive(statusRes.autopilotEnabled || false);
       }
 
-      // Load queue data from new scheduler endpoint
-      const queueRes = await api.get('/scheduler/status');
-      if (queueRes.queuedVideos) {
-        setQueueData(queueRes.queuedVideos || []);
+      // Load queue data from Phase 9 autopilot queue endpoint
+      const queueRes = await api.get('/autopilot/queue');
+      if (queueRes.success && queueRes.queue) {
+        setQueueData(queueRes.queue || []);
       }
 
     } catch (error) {
@@ -212,7 +213,7 @@ export default function AutopilotPage() {
         trendingAudio: settings.trendingAudio,
         aiCaptions: settings.aiCaptions,
         dropboxSave: settings.dropboxSave,
-        autopilot: autopilotActive
+        autopilotEnabled: autopilotActive
       });
       
       showNotification('💾 Settings saved successfully!', 'success');
@@ -265,9 +266,15 @@ export default function AutopilotPage() {
 
   const startAutopilot = async () => {
     try {
-      await api.post('/settings', { autopilot: true });
+      const response = await api.post('/settings', { autopilotEnabled: true });
       setAutopilotActive(true);
       showNotification('🚀 Autopilot started successfully!', 'success');
+      
+      // Check if Phase 9 was triggered
+      if (response.autopilotTriggered) {
+        showNotification('📊 Phase 9 system triggered!', 'success');
+      }
+      
       await loadAutopilotData();
     } catch (error) {
       console.error('❌ Failed to start autopilot:', error);
@@ -277,7 +284,7 @@ export default function AutopilotPage() {
 
   const stopAutopilot = async () => {
     try {
-      await api.post('/settings', { autopilot: false });
+      await api.post('/settings', { autopilotEnabled: false });
       setAutopilotActive(false);
       showNotification('⏹️ Autopilot stopped', 'success');
       await loadAutopilotData();
@@ -573,9 +580,9 @@ export default function AutopilotPage() {
             </div>
           ) : (
             queueData.map((video, index) => (
-              <div key={video._id || index} className="video-card">
+              <div key={video.id || index} className="video-card">
                 <div className="video-preview" style={{
-                  backgroundImage: video.thumbnailUrl ? `url(${video.thumbnailUrl})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  backgroundImage: video.s3Url ? `url(${video.s3Url})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   width: '100px',
@@ -593,18 +600,30 @@ export default function AutopilotPage() {
                     fontSize: '24px',
                     textShadow: '0 2px 4px rgba(0,0,0,0.8)'
                   }}>▶</div>
-                  {!video.thumbnailUrl && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '8px',
+                    left: '8px',
+                    right: '8px',
+                    color: 'white',
+                    fontSize: '12px',
+                    textAlign: 'center',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+                  }}>
+                    {video.platform === 'instagram' ? '📷' : '▶️'} {video.platform}
+                  </div>
+                  {video.engagement && (
                     <div style={{
                       position: 'absolute',
-                      bottom: '8px',
-                      left: '8px',
+                      top: '8px',
                       right: '8px',
+                      background: 'rgba(0,0,0,0.7)',
                       color: 'white',
-                      fontSize: '12px',
-                      textAlign: 'center',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+                      fontSize: '10px',
+                      padding: '2px 6px',
+                      borderRadius: '4px'
                     }}>
-                      {video.platform === 'instagram' ? '📷' : '▶️'} {video.platform}
+                      {video.engagement.toLocaleString()} 💖
                     </div>
                   )}
                 </div>
@@ -612,55 +631,25 @@ export default function AutopilotPage() {
                 <div className="video-caption">
                   <div className="caption-label">🤖 AI-Generated Caption</div>
                   <div className="caption-text">
-                    {video.newCaption 
-                      ? video.newCaption.length > 200 
-                        ? `${video.newCaption.substring(0, 200)}...` 
-                        : video.newCaption
-                      : 'No caption available'
-                    }
-                  </div>
-                </div>
-            
-                <div className="hashtags-section">
-                  <div className="caption-label">🏷️ Optimized Hashtags ({video.hashtags?.length || 0})</div>
-                  <div className="hashtags-container">
-                    {((video.hashtags as string[]) || []).slice(0, 20).map((tag: string, tagIndex: number) => (
-                      <span key={tagIndex} className="hashtag">#{tag}</span>
-                    )) || <span className="hashtag-placeholder">No hashtags</span>}
+                    {video.caption || 'No caption available'}
                   </div>
                 </div>
             
                 <div className="video-metadata">
                   <div className="metadata-item">
-                    <div className="metadata-label">🎵 Trending Audio</div>
-                    <div className="trending-audio">
-                      <div className="audio-icon">♪</div>
-                      <span>
-                        {video.audioId 
-                          ? video.audioId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) 
-                          : 'No audio selected'
-                        }
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="metadata-item">
                     <div className="metadata-label">📱 Platform</div>
                     <div className="platform-badges">
-                      {video.targetPlatform === 'instagram' && (
-                        <span className="platform-badge badge-instagram">📷 Instagram</span>
-                      )}
-                      {video.targetPlatform === 'youtube' && (
-                        <span className="platform-badge badge-youtube">▶️ YouTube</span>
-                      )}
+                      <span className={`platform-badge ${video.platform === 'instagram' ? 'badge-instagram' : 'badge-youtube'}`}>
+                        {video.platform === 'instagram' ? '📷 Instagram' : '▶️ YouTube'}
+                      </span>
                     </div>
                   </div>
                   
                   <div className="metadata-item">
                     <div className="metadata-label">⏰ Scheduled Time</div>
                     <div className="metadata-value">
-                      {video.scheduledFor 
-                        ? new Date(video.scheduledFor).toLocaleDateString('en-US', {
+                      {video.scheduledAt 
+                        ? new Date(video.scheduledAt).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             hour: 'numeric',
@@ -677,6 +666,20 @@ export default function AutopilotPage() {
                     <span className={`status-badge status-${video.status || 'unknown'}`}>
                       {video.status ? video.status.charAt(0).toUpperCase() + video.status.slice(1) : 'Unknown'}
                     </span>
+                  </div>
+
+                  <div className="metadata-item">
+                    <div className="metadata-label">🎯 Original Engagement</div>
+                    <div className="metadata-value">
+                      {video.engagement ? video.engagement.toLocaleString() : 'N/A'}
+                    </div>
+                  </div>
+
+                  <div className="metadata-item">
+                    <div className="metadata-label">☁️ S3 Video</div>
+                    <div className="metadata-value" style={{ fontSize: '10px', fontFamily: 'monospace' }}>
+                      {video.s3Url ? '✅ Uploaded' : '❌ Missing'}
+                    </div>
                   </div>
                 </div>
               </div>

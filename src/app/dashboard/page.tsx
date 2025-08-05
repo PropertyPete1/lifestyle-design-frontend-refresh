@@ -10,7 +10,7 @@ import { API_ENDPOINTS } from '../../utils/api';
 // import NotificationSystem from '../../components/NotificationSystem'; // DISABLED
 
 type DashboardSettings = {
-  autopilot: boolean
+  autopilotEnabled: boolean
   maxPosts: number
   postTime: string
   repostDelay: number
@@ -18,7 +18,7 @@ type DashboardSettings = {
 }
 
 const defaultStatus: DashboardSettings = {
-  autopilot: false,
+  autopilotEnabled: false,
   maxPosts: 3,
   postTime: '14:00',
   repostDelay: 1,
@@ -236,7 +236,7 @@ export default function Dashboard() {
         if (res.ok) {
           const data = await res.json();
           setStatus({
-            autopilot: data.autopilot || false,
+            autopilotEnabled: data.autopilotEnabled || false,
             manual: data.manual !== false,
             maxPosts: data.maxPosts || 3,
             postTime: data.postTime || '14:00',
@@ -434,7 +434,7 @@ export default function Dashboard() {
         if (res.ok) {
           const data = await res.json()
           setStatus({
-            autopilot: data.autopilot || false,
+            autopilotEnabled: data.autopilotEnabled || false,
             manual: data.manual !== false,
             maxPosts: data.maxPosts || 3,
             postTime: data.postTime || '14:00',
@@ -553,18 +553,23 @@ export default function Dashboard() {
           console.warn('⚠️ Enhanced activity failed, trying fallback...');
         }
 
-        // Use scheduler status for autopilot data
+        // Use Phase 9 autopilot status for real-time data
         try {
-          const schedulerRes = await fetch(API_ENDPOINTS.schedulerStatus())
-          if (schedulerRes.ok) {
-            const schedulerData = await schedulerRes.json()
-            if (schedulerData.success) {
-              console.log('📊 Scheduler Status:', schedulerData.data)
-              setAutopilotRunning(schedulerData.data.running || false)
+          const autopilotRes = await fetch('https://lifestyle-design-backend-v2.onrender.com/api/autopilot/status')
+          if (autopilotRes.ok) {
+            const autopilotData = await autopilotRes.json()
+            if (autopilotData.success) {
+              console.log('📊 Phase 9 Autopilot Status:', autopilotData)
+              setAutopilotRunning(autopilotData.autopilotEnabled || false)
+              
+              // Update queue size from autopilot data
+              if (autopilotData.queue) {
+                setQueueSize(autopilotData.queue.scheduled || 0)
+              }
             }
           }
-        } catch (schedulerErr) {
-          console.warn('⚠️ Scheduler status not available:', schedulerErr)
+        } catch (autopilotErr) {
+          console.warn('⚠️ Phase 9 autopilot status not available:', autopilotErr)
         }
       } catch (err) {
         console.error('❌ Failed to load settings for dashboard:', err)
@@ -1078,7 +1083,7 @@ export default function Dashboard() {
                   {autopilotStatus === 'running' ? 'Running...' :
                    autopilotStatus === 'success' ? 'Posted!' :
                    autopilotStatus === 'error' ? 'Failed' :
-                   status.autopilot ? 'Active' : 'Inactive'}
+                   status.autopilotEnabled ? 'Active' : 'Inactive'}
                 </div>
               </div>
               <div className="metric-value">{status.maxPosts}/day</div>
@@ -1204,7 +1209,7 @@ export default function Dashboard() {
                   {autopilotStatus === 'running' ? 'Running...' :
                    autopilotStatus === 'success' ? 'Posted!' :
                    autopilotStatus === 'error' ? 'Failed' :
-                   status.autopilot ? 'Active' : 'Inactive'}
+                   status.autopilotEnabled ? 'Active' : 'Inactive'}
                 </div>
               </div>
               <div className="metric-value youtube">{status.maxPosts}/day</div>
