@@ -935,37 +935,3 @@ export default function Settings() {
     </div>
   );
 }
-
-        {/* Privacy Policy */}
-        <div className="settings-card">
-          <div className="card-header">
-            <div className="card-emoji">🔒</div>
-            <h2 className="card-title">Privacy Policy</h2>
-          </div>
-          <div className="form-group">
-            <div style={{
-              background: "rgba(255,255,255,0.05)", 
-              padding: "1.5rem", 
-              borderRadius: "10px", 
-              border: "1px solid rgba(255,255,255,0.1)",
-              lineHeight: "1.6",
-              color: "rgba(255,255,255,0.9)"
-            }}>
-              <h3 style={{color: "#fff", marginBottom: "1rem"}}>Privacy Policy</h3>
-              <p style={{marginBottom: "1rem"}}>
-                We only access the data required to connect your social media accounts and publish content on your behalf.
-                We do not sell or share your data. You may disconnect your account at any time.
-              </p>
-              <ul style={{fontSize: "0.9rem", color: "rgba(255,255,255,0.7)", paddingLeft: "1.5rem"}}>
-                <li>Social media account information for posting</li>
-                <li>Video files you choose to upload or process</li>
-                <li>Settings and preferences you configure</li>
-                <li>API tokens (stored securely, never shared)</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
