@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
   schedulerStatus: () => apiUrl('api/scheduler/status'), // NEW SCHEDULER ENDPOINT
   
   // Activity and analytics
+  analytics: () => apiUrl('api/analytics'), // UNIFIED ANALYTICS ENDPOINT
   activityFeed: (limit?: number) => apiUrl(`api/activity/feed${limit ? `?limit=${limit}` : ''}`),
   instagramAnalytics: () => apiUrl('api/instagram/analytics'),
   youtubeAnalytics: () => apiUrl('api/youtube/analytics'),
