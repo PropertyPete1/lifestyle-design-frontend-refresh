@@ -363,7 +363,12 @@ export default function AutopilotPage() {
                 value={settings.maxPosts} 
                 min="1" 
                 max="10"
-                onChange={(e) => updateSetting('maxPosts', parseInt(e.target.value))}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value >= 1 && value <= 10) {
+                    updateSetting('maxPosts', value);
+                  }
+                }}
               />
               <div className="setting-description">Maximum number of posts to publish daily</div>
             </div>
@@ -407,7 +412,12 @@ export default function AutopilotPage() {
                 value={settings.repostDelay} 
                 min="1" 
                 max="30"
-                onChange={(e) => updateSetting('repostDelay', parseInt(e.target.value))}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value >= 1 && value <= 30) {
+                    updateSetting('repostDelay', value);
+                  }
+                }}
               />
               <div className="setting-description">Days to wait before reposting content</div>
             </div>
@@ -423,7 +433,12 @@ export default function AutopilotPage() {
                 value={settings.minViews} 
                 min="1000" 
                 step="1000"
-                onChange={(e) => updateSetting('minViews', parseInt(e.target.value))}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value >= 0) {
+                    updateSetting('minViews', value);
+                  }
+                }}
               />
               <div className="setting-description">Minimum view count required for automatic reposting</div>
             </div>
@@ -440,7 +455,12 @@ export default function AutopilotPage() {
                 min="7" 
                 max="90"
                 step="1"
-                onChange={(e) => updateSetting('visualSimilarityDays', parseInt(e.target.value))}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value >= 1 && value <= 90) {
+                    updateSetting('visualSimilarityDays', value);
+                  }
+                }}
               />
               <div className="setting-description">Days to avoid visually similar content (currently {settings.visualSimilarityDays} days)</div>
             </div>
