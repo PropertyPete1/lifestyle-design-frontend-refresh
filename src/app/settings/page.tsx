@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // API configuration  
 const API_BASE_URL = 'https://lifestyle-design-backend-v2.onrender.com/api';
@@ -113,43 +113,43 @@ export default function Settings() {
       const response = await api.get('/settings');
       console.log('🔍 Full backend response:', response);
       
-      if (response && response.settings) {
-        const settings = response.settings;
+      if (response) {
+        const settings = response;
         console.log('📋 Settings data:', settings);
         
         // 🧪 TEST: Log individual field loading
         console.log('🔧 Loading Instagram Token:', settings.instagramToken?.substring(0, 20) + '...');
-        console.log('🔧 Loading YouTube Token:', settings.youtubeToken);
-        console.log('🔧 Loading YouTube Channel:', settings.youtubeChannel);
+        console.log('🔧 Loading YouTube Token:', settings.youtubeAccessToken);
+        console.log('🔧 Loading YouTube Channel:', settings.youtubeChannelId);
         
-        // 🛡️ Load initial values OR preserve user typing
+        // 🛡️ Load initial values OR preserve user typing - FIXED FIELD MAPPINGS
         if (!settingsLoaded || !instagramToken) setInstagramToken(settings.instagramToken || '');
-        if (!settingsLoaded || !instagramAccount) setInstagramAccount(settings.instagramAccount || '');
-        if (!settingsLoaded || !facebookPage) setFacebookPage(settings.facebookPage || '');
-        if (!settingsLoaded || !youtubeToken) setYoutubeToken(settings.youtubeToken || '');
-        if (!settingsLoaded || !youtubeRefresh) setYoutubeRefresh(settings.youtubeRefresh || '');
-        if (!settingsLoaded || !youtubeChannel) setYoutubeChannel(settings.youtubeChannel || '');
+        if (!settingsLoaded || !instagramAccount) setInstagramAccount(settings.igBusinessId || '');
+        if (!settingsLoaded || !facebookPage) setFacebookPage(settings.facebookPageId || '');
+        if (!settingsLoaded || !youtubeToken) setYoutubeToken(settings.youtubeAccessToken || '');
+        if (!settingsLoaded || !youtubeRefresh) setYoutubeRefresh(settings.youtubeRefreshToken || '');
+        if (!settingsLoaded || !youtubeChannel) setYoutubeChannel(settings.youtubeChannelId || '');
         if (!settingsLoaded || !youtubeClientId) setYoutubeClientId(settings.youtubeClientId || '');
         if (!settingsLoaded || !youtubeClientSecret) setYoutubeClientSecret(settings.youtubeClientSecret || '');
         if (!settingsLoaded || !dropboxToken) setDropboxToken(settings.dropboxToken || '');
-        if (!settingsLoaded || !mongodbUri) setMongodbUri(settings.mongodbUri || '');
+        if (!settingsLoaded || !mongodbUri) setMongodbUri(settings.mongoURI || '');
         
         // Mark as loaded
         setSettingsLoaded(true);
         
         console.log('✅ Settings loaded without overwriting user input!');
         
-        // Optional credentials - load initial values OR preserve user typing
-        if (!settingsLoaded || !runwayApi) setRunwayApi(settings.runwayApi || '');
-        if (!settingsLoaded || !openaiApi) setOpenaiApi(settings.openaiApi || '');
+        // Optional credentials - load initial values OR preserve user typing - FIXED FIELD MAPPINGS
+        if (!settingsLoaded || !runwayApi) setRunwayApi(settings.runwayApiKey || '');
+        if (!settingsLoaded || !openaiApi) setOpenaiApi(settings.openaiApiKey || '');
         if (!settingsLoaded || !s3AccessKey) setS3AccessKey(settings.s3AccessKey || '');
         if (!settingsLoaded || !s3SecretKey) setS3SecretKey(settings.s3SecretKey || '');
-        if (!settingsLoaded || !s3Bucket) setS3Bucket(settings.s3Bucket || '');
+        if (!settingsLoaded || !s3Bucket) setS3Bucket(settings.s3BucketName || '');
         if (!settingsLoaded || !s3Region) setS3Region(settings.s3Region || '');
         
-        // Mode settings
-        setAutopilotMode(settings.autopilot || false);
-        setManualMode(settings.manual !== false); // Default to true
+        // Mode settings - Fix backend field mapping
+        setAutopilotMode(settings.autopilotEnabled || false);
+        setManualMode(!settings.autopilotEnabled); // Manual is opposite of autopilot
         
         // Scheduler settings
         setPostTime(settings.postTime || '14:00');
@@ -185,13 +185,47 @@ export default function Settings() {
     window.location.href = '/dashboard';
   };
 
-  const toggleMode = (mode: string) => {
-    if (mode === 'autopilot') {
-      setAutopilotMode(true);
-      setManualMode(false);
-    } else {
-      setManualMode(true);
-      setAutopilotMode(false);
+  const toggleMode = async (mode: string) => {
+    try {
+      if (mode === 'autopilot') {
+        setAutopilotMode(true);
+        setManualMode(false);
+        
+        // Save autopilot enabled to backend
+        const response = await api.post('/settings', { autopilotEnabled: true });
+        console.log('✅ AutoPilot enabled and saved to backend');
+        showNotification('🚀 AutoPilot Mode Enabled!');
+        
+        // Trigger AutoPilot run
+        try {
+          const autopilotResult = await api.post('/autopilot/run', {});
+          console.log('✅ AutoPilot scraping triggered:', autopilotResult);
+          showNotification('📊 AutoPilot scraping started!');
+        } catch (autopilotError) {
+          console.warn('⚠️ AutoPilot run failed, but mode is enabled:', autopilotError);
+          showNotification('⚠️ AutoPilot enabled but scraping failed');
+        }
+        
+      } else {
+        setManualMode(true);
+        setAutopilotMode(false);
+        
+        // Save autopilot disabled to backend
+        await api.post('/settings', { autopilotEnabled: false });
+        console.log('✅ Manual mode enabled and saved to backend');
+        showNotification('✋ Manual Mode Enabled');
+      }
+    } catch (error) {
+      console.error('❌ Failed to toggle mode:', error);
+      showNotification('❌ Failed to save mode setting');
+      // Revert state on error
+      if (mode === 'autopilot') {
+        setAutopilotMode(false);
+        setManualMode(true);
+      } else {
+        setAutopilotMode(true);
+        setManualMode(false);
+      }
     }
   };
 
@@ -200,28 +234,28 @@ export default function Settings() {
       // 🛡️ ONLY send fields that have values - don't overwrite existing credentials with empty strings!
       const data: Record<string, any> = {};
       
-      // Core credentials - only if not empty
+      // Core credentials - only if not empty - FIXED FIELD MAPPINGS
       if (instagramToken.trim()) data.instagramToken = instagramToken;
-      if (instagramAccount.trim()) data.instagramAccount = instagramAccount;
-      if (facebookPage.trim()) data.facebookPage = facebookPage;
-      if (youtubeToken.trim()) data.youtubeToken = youtubeToken;
-      if (youtubeRefresh.trim()) data.youtubeRefresh = youtubeRefresh;
-      if (youtubeChannel.trim()) data.youtubeChannel = youtubeChannel;
+      if (instagramAccount.trim()) data.igBusinessId = instagramAccount;
+      if (facebookPage.trim()) data.facebookPageId = facebookPage;
+      if (youtubeToken.trim()) data.youtubeAccessToken = youtubeToken;
+      if (youtubeRefresh.trim()) data.youtubeRefreshToken = youtubeRefresh;
+      if (youtubeChannel.trim()) data.youtubeChannelId = youtubeChannel;
       if (youtubeClientId.trim()) data.youtubeClientId = youtubeClientId;
       if (youtubeClientSecret.trim()) data.youtubeClientSecret = youtubeClientSecret;
       if (dropboxToken.trim()) data.dropboxToken = dropboxToken;
-      if (mongodbUri.trim()) data.mongodbUri = mongodbUri;
+      if (mongodbUri.trim()) data.mongoURI = mongodbUri;
       
-      // Optional credentials - only if not empty
-      if (runwayApi.trim()) data.runwayApi = runwayApi;
-      if (openaiApi.trim()) data.openaiApi = openaiApi;
+      // Optional credentials - only if not empty - FIXED FIELD MAPPINGS
+      if (runwayApi.trim()) data.runwayApiKey = runwayApi;
+      if (openaiApi.trim()) data.openaiApiKey = openaiApi;
       if (s3AccessKey.trim()) data.s3AccessKey = s3AccessKey;
       if (s3SecretKey.trim()) data.s3SecretKey = s3SecretKey;
-      if (s3Bucket.trim()) data.s3Bucket = s3Bucket;
+      if (s3Bucket.trim()) data.s3BucketName = s3Bucket;
       if (s3Region.trim()) data.s3Region = s3Region;
       
-      // Always send settings (these have defaults)
-      data.autopilot = autopilotMode;
+      // Always send settings (these have defaults) - FIXED FIELD MAPPINGS
+      data.autopilotEnabled = autopilotMode;
       data.manual = manualMode;
       data.postTime = postTime;
       data.peakHours = peakHours;
