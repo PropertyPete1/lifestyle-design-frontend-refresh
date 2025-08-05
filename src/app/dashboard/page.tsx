@@ -76,6 +76,7 @@ export default function Dashboard() {
   const [queuedPosts, setQueuedPosts] = useState<any[]>([]);
   const [showUpcoming, setShowUpcoming] = useState(true); // Toggle between upcoming and recent
   const [chartData, setChartData] = useState<any>(null);
+  const [credentialsDebug, setCredentialsDebug] = useState<any>(null);
   
   // ✅ NEW: Real-time notifications - DISABLED
   // const [notificationHandler, setNotificationHandler] = useState<((message: string, type?: 'success' | 'error' | 'info') => void) | null>(null);
@@ -87,63 +88,75 @@ export default function Dashboard() {
   //   setNotificationHandler(() => handler);
   // }, []);
   
-  // ✅ Analytics fetch function
+  // ✅ Real Analytics fetch function using unified endpoint
   const fetchAnalytics = useCallback(async () => {
     try {
       setAnalyticsLoading(true);
+      console.log('📊 [DASHBOARD] Fetching unified analytics...');
       
-      // Fetch both Instagram and YouTube analytics in parallel
-      const [instagramRes, youtubeRes] = await Promise.all([
-        fetch(API_ENDPOINTS.instagramAnalytics()),
-        fetch(API_ENDPOINTS.youtubeAnalytics())
-      ]);
-
-      let instagramData: Record<string, unknown> = {};
-      let youtubeData: Record<string, unknown> = {};
-
-      if (instagramRes.ok) {
-        const igResult = await instagramRes.json();
-        if (igResult.success && igResult.analytics) {
-          instagramData = igResult.analytics;
-          console.log('✅ Instagram analytics loaded:', instagramData.formatted);
-        }
-      } else {
-        console.warn('⚠️ Failed to load Instagram analytics');
-      }
-
-      if (youtubeRes.ok) {
-        const ytResult = await youtubeRes.json();
-        if (ytResult.success && ytResult.analytics) {
-          youtubeData = ytResult.analytics;
-          console.log('✅ YouTube analytics loaded:', youtubeData.formatted);
-        }
-      } else {
-        // Don't spam console for known credential issues
-        if (youtubeRes.status === 400) {
-          console.warn('⚠️ YouTube analytics requires credentials configuration');
-        } else {
-          console.warn('⚠️ Failed to load YouTube analytics');
-        }
-      }
-
-      // Update stats with real data
-      const igFormatted = instagramData.formatted as any;
-      const ytFormatted = youtubeData.formatted as any;
+      // Fetch unified analytics from new endpoint
+      const response = await fetch(API_ENDPOINTS.analytics());
       
-      setStats(prevStats => ({
+      if (!response.ok) {
+        throw new Error(`Analytics API error: ${response.status}`);
+      }
+      
+      const analyticsData = await response.json();
+      console.log('✅ [DASHBOARD] Analytics loaded:', analyticsData);
+      
+      // Format numbers for display
+      const formatNumber = (num: number) => {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+        return num.toString();
+      };
+      
+      const formatPercent = (num: number) => `${num.toFixed(1)}%`;
+      
+      // Update stats with real data from unified endpoint
+      setStats({
         instagram: {
-          followers: igFormatted?.followers || prevStats.instagram.followers,
-          engagement: igFormatted?.engagement || prevStats.instagram.engagement,
-          reach: igFormatted?.reach || prevStats.instagram.reach,
+          followers: formatNumber(analyticsData.instagram.followers),
+          engagement: formatPercent(analyticsData.instagram.engagementRate),
+          reach: formatNumber(analyticsData.instagram.reach),
           autoPostsPerDay: `${status.maxPosts}/day`
         },
         youtube: {
-          subscribers: ytFormatted?.subscribers || prevStats.youtube.subscribers,
-          watchTime: ytFormatted?.watchTime || prevStats.youtube.watchTime,
-          views: ytFormatted?.views || prevStats.youtube.views,
+          subscribers: formatNumber(analyticsData.youtube.subscribers),
+          watchTime: 'N/A', // YouTube doesn't provide this in basic API
+          views: formatNumber(analyticsData.youtube.reach),
           autoUploadsPerWeek: '2/week'
         }
-      }));
+      });
+      
+      // Update platform data for heart cards and charts
+      setPlatformData({
+        instagram: {
+          active: analyticsData.instagram.isPosting,
+          todayPosts: 0, // Could be enhanced with real data
+          reach: analyticsData.instagram.reach,
+          engagement: analyticsData.instagram.engagementRate
+        },
+        youtube: {
+          active: analyticsData.youtube.isPosting,
+          todayPosts: 0, // Could be enhanced with real data
+          reach: analyticsData.youtube.reach,
+          engagement: analyticsData.youtube.engagementRate
+        }
+      });
+
+      // Update upcoming posts if available
+      if (analyticsData.upcomingPosts) {
+        setQueuedPosts(analyticsData.upcomingPosts);
+      }
+
+      console.log('✅ [DASHBOARD] Stats updated with real data');
+      
+      // Store credentials for debug view and log in development
+      setCredentialsDebug(analyticsData.credentials);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔑 [DEV] Credential Status:', analyticsData.credentials);
+      }
 
     } catch (err) {
       console.error('❌ Failed to load analytics:', err);
@@ -1251,6 +1264,51 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* 🔑 Development Credentials Debug View */}
+        {process.env.NODE_ENV === 'development' && credentialsDebug && (
+          <div style={{
+            marginTop: '2rem',
+            padding: '1rem',
+            backgroundColor: '#1a1a1a',
+            border: '1px solid #333',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontFamily: 'monospace'
+          }}>
+            <h4 style={{ color: '#ff6b6b', marginBottom: '1rem', fontSize: '14px' }}>
+              🔑 Development Mode - Credential Status
+            </h4>
+            <div style={{ display: 'grid', gap: '0.5rem' }}>
+              {Object.entries(credentialsDebug).map(([key, status]) => (
+                <div key={key} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  padding: '0.25rem 0'
+                }}>
+                  <span style={{ color: '#888' }}>{key}:</span>
+                  <span style={{ 
+                    color: status === '✅ Configured' ? '#4ade80' : '#f87171',
+                    fontWeight: 'bold'
+                  }}>
+                    {status as string}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div style={{ 
+              marginTop: '1rem', 
+              padding: '0.5rem',
+              backgroundColor: '#2a2a2a',
+              borderRadius: '4px',
+              color: '#888',
+              fontSize: '11px'
+            }}>
+              This debug panel only appears in development mode and shows the configuration status 
+              of your API credentials from MongoDB settings.
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
