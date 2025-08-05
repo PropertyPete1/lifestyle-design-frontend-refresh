@@ -413,9 +413,14 @@ export default function AutopilotPage() {
                 min="1" 
                 max="30"
                 onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (!isNaN(value) && value >= 1 && value <= 30) {
-                    updateSetting('repostDelay', value);
+                  const value = e.target.value;
+                  // Allow empty input for typing
+                  if (value === '') {
+                    return;
+                  }
+                  const numValue = parseInt(value);
+                  if (!isNaN(numValue) && numValue >= 1 && numValue <= 30) {
+                    updateSetting('repostDelay', numValue);
                   }
                 }}
               />
