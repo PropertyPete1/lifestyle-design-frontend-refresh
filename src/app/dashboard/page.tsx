@@ -113,47 +113,53 @@ export default function Dashboard() {
       
       const formatPercent = (num: number) => `${num.toFixed(1)}%`;
       
-      // Update stats with real data from unified endpoint
+      // Update stats with REAL data from new analytics endpoint
       setStats({
         instagram: {
-          followers: formatNumber(analyticsData.instagram.followers),
-          engagement: formatPercent(analyticsData.instagram.engagementRate),
-          reach: formatNumber(analyticsData.instagram.reach),
+          followers: formatNumber(analyticsData.instagram?.followers || 0),
+          engagement: formatPercent((analyticsData.instagram?.engagementRate || 0) * 100),
+          reach: formatNumber(analyticsData.instagram?.reach || 0),
           autoPostsPerDay: `${status.maxPosts}/day`
         },
         youtube: {
-          subscribers: formatNumber(analyticsData.youtube.subscribers),
-          watchTime: 'N/A', // YouTube doesn't provide this in basic API
-          views: formatNumber(analyticsData.youtube.reach),
+          subscribers: formatNumber(analyticsData.youtube?.subscribers || 0),
+          watchTime: 'N/A', // YouTube Analytics API scope needed
+          views: formatNumber(analyticsData.youtube?.reach || 0),
           autoUploadsPerWeek: '2/week'
         }
       });
       
-      // Update platform data for heart cards and charts
+      // Update platform data for heart cards and charts with REAL data
       setPlatformData({
         instagram: {
-          active: analyticsData.instagram.isPosting,
-          todayPosts: 0, // Could be enhanced with real data
-          reach: analyticsData.instagram.reach,
-          engagement: analyticsData.instagram.engagementRate
+          active: analyticsData.instagram?.autopilotEnabled || false,
+          todayPosts: 0, // Enhanced with real data later
+          reach: analyticsData.instagram?.reach || 0,
+          engagement: analyticsData.instagram?.engagementRate || 0
         },
         youtube: {
-          active: analyticsData.youtube.isPosting,
-          todayPosts: 0, // Could be enhanced with real data
-          reach: analyticsData.youtube.reach,
-          engagement: analyticsData.youtube.engagementRate
+          active: analyticsData.youtube?.autopilotEnabled || false,
+          todayPosts: 0, // Enhanced with real data later
+          reach: analyticsData.youtube?.reach || 0,
+          engagement: 0 // YouTube engagement calculated differently
         }
       });
 
       // Update upcoming posts if available
-      if (analyticsData.upcomingPosts) {
+      if (analyticsData.upcomingPosts && analyticsData.upcomingPosts.length > 0) {
         setQueuedPosts(analyticsData.upcomingPosts);
+        setQueueSize(analyticsData.upcomingPosts.length);
+      }
+
+      // Update autopilot status for UI
+      setAutopilotRunning(analyticsData.instagram?.autopilotEnabled || analyticsData.youtube?.autopilotEnabled || false);
+
+      // Update credentials debug with real status
+      if (analyticsData.credentials) {
+        setCredentialsDebug(analyticsData.credentials);
       }
 
       console.log('✅ [DASHBOARD] Stats updated with real data');
-      
-      // Store credentials for debug view and log in development
-      setCredentialsDebug(analyticsData.credentials);
       if (process.env.NODE_ENV === 'development') {
         console.log('🔑 [DEV] Credential Status:', analyticsData.credentials);
       }
