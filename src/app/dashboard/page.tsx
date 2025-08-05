@@ -250,6 +250,26 @@ export default function Dashboard() {
               youtube: data.autopilotPlatforms.youtube || false
             });
           }
+
+          // ✅ Update credentials debug info for dashboard display
+          setCredentialsDebug({
+            'Instagram Token': data.instagramToken ? '✅ Configured' : '❌ Missing',
+            'IG Business ID': data.igBusinessId ? '✅ Configured' : '❌ Missing',
+            'Facebook Page': data.facebookPage ? '✅ Configured' : '❌ Missing',
+            'YouTube Client ID': data.youtubeClientId ? '✅ Configured' : '❌ Missing',
+            'YouTube Client Secret': data.youtubeClientSecret ? '✅ Configured' : '❌ Missing',
+            'YouTube Access Token': data.youtubeAccessToken ? '✅ Configured' : '❌ Missing',
+            'YouTube Refresh Token': data.youtubeRefreshToken ? '✅ Configured' : '❌ Missing',
+            'YouTube Channel ID': data.youtubeChannelId ? '✅ Configured' : '❌ Missing',
+            'OpenAI API Key': data.openaiApiKey ? '✅ Configured' : '❌ Missing',
+            'S3 Access Key': data.s3AccessKey ? '✅ Configured' : '❌ Missing',
+            'S3 Secret Key': data.s3SecretKey ? '✅ Configured' : '❌ Missing',
+            'S3 Bucket Name': data.s3BucketName ? '✅ Configured' : '❌ Missing',
+            'S3 Region': data.s3Region ? '✅ Configured' : '❌ Missing',
+            'MongoDB URI': data.mongoURI ? '✅ Configured' : '❌ Missing',
+            'Dropbox Token': data.dropboxToken ? '✅ Configured' : '❌ Missing',
+            'Runway API Key': data.runwayApiKey ? '✅ Configured' : '❌ Missing'
+          });
         }
       } catch (settingsError) {
         console.warn('⚠️ Settings refresh failed:', settingsError);
@@ -439,6 +459,26 @@ export default function Dashboard() {
             maxPosts: data.maxPosts || 3,
             postTime: data.postTime || '14:00',
             repostDelay: data.repostDelay || 1
+          })
+
+          // ✅ Load credentials info for dashboard display
+          setCredentialsDebug({
+            'Instagram Token': data.instagramToken ? '✅ Configured' : '❌ Missing',
+            'IG Business ID': data.igBusinessId ? '✅ Configured' : '❌ Missing',
+            'Facebook Page': data.facebookPage ? '✅ Configured' : '❌ Missing',
+            'YouTube Client ID': data.youtubeClientId ? '✅ Configured' : '❌ Missing',
+            'YouTube Client Secret': data.youtubeClientSecret ? '✅ Configured' : '❌ Missing',
+            'YouTube Access Token': data.youtubeAccessToken ? '✅ Configured' : '❌ Missing',
+            'YouTube Refresh Token': data.youtubeRefreshToken ? '✅ Configured' : '❌ Missing',
+            'YouTube Channel ID': data.youtubeChannelId ? '✅ Configured' : '❌ Missing',
+            'OpenAI API Key': data.openaiApiKey ? '✅ Configured' : '❌ Missing',
+            'S3 Access Key': data.s3AccessKey ? '✅ Configured' : '❌ Missing',
+            'S3 Secret Key': data.s3SecretKey ? '✅ Configured' : '❌ Missing',
+            'S3 Bucket Name': data.s3BucketName ? '✅ Configured' : '❌ Missing',
+            'S3 Region': data.s3Region ? '✅ Configured' : '❌ Missing',
+            'MongoDB URI': data.mongoURI ? '✅ Configured' : '❌ Missing',
+            'Dropbox Token': data.dropboxToken ? '✅ Configured' : '❌ Missing',
+            'Runway API Key': data.runwayApiKey ? '✅ Configured' : '❌ Missing'
           })
         } else {
           console.warn('⚠️ No settings found, using defaults.')
@@ -1270,8 +1310,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 🔑 Development Credentials Debug View */}
-        {process.env.NODE_ENV === 'development' && credentialsDebug && (
+        {/* 🔑 Credentials Status View */}
+        {credentialsDebug && (
           <div style={{
             marginTop: '2rem',
             padding: '1rem',
@@ -1282,7 +1322,7 @@ export default function Dashboard() {
             fontFamily: 'monospace'
           }}>
             <h4 style={{ color: '#ff6b6b', marginBottom: '1rem', fontSize: '14px' }}>
-              🔑 Development Mode - Credential Status
+              🔑 API Credentials Status
             </h4>
             <div style={{ display: 'grid', gap: '0.5rem' }}>
               {Object.entries(credentialsDebug).map(([key, status]) => (
@@ -1309,8 +1349,8 @@ export default function Dashboard() {
               color: '#888',
               fontSize: '11px'
             }}>
-              This debug panel only appears in development mode and shows the configuration status 
-              of your API credentials from MongoDB settings.
+              This panel shows the configuration status of your API credentials from MongoDB settings. 
+              All credentials are stored securely and only status indicators are displayed here.
             </div>
           </div>
         )}
