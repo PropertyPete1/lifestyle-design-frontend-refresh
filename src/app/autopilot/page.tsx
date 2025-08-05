@@ -230,8 +230,8 @@ export default function AutopilotPage() {
       showNotification('📅 Scheduling video for optimal posting time...', 'success');
       
       const res = await api.post('/autopost/run-now', {
-        videoPath: '/temp/example-video.mp4',
-        originalCaption: 'Great lifestyle content!',
+        filename: 'example-video.mp4',
+        caption: 'Great lifestyle content!',
         platform: 'instagram'
       });
 
