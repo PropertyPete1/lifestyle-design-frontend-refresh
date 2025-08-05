@@ -2,6 +2,7 @@
 // /frontend-v2/src/components/AutopilotDashboard.tsx
 
 import React, { useState } from 'react';
+import { API_ENDPOINTS } from '../utils/api';
 
 interface AutopilotResults {
   processed: number;
@@ -22,7 +23,7 @@ const AutopilotDashboard: React.FC = () => {
     setResults(null);
     
     try {
-      const res = await fetch('https://lifestyle-design-backend-v2.onrender.com/api/autopost/run-now', {
+      const res = await fetch(API_ENDPOINTS.autopilotRun(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

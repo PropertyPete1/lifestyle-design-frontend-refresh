@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_ENDPOINTS } from '../utils/api';
 
 interface HeartData {
   isPosting: boolean;
@@ -33,7 +34,7 @@ const HeartStatusCard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:3002/api/chart/status');
+        const response = await fetch(API_ENDPOINTS.chartStatus());
         const data = await response.json();
         
         // Use the correct data structure from the actual API

@@ -1,6 +1,7 @@
 // ✅ /frontend-v2/src/components/AutopilotButton.tsx
 
 import React, { useState } from 'react';
+import { API_ENDPOINTS } from '../utils/api';
 
 type AutopilotStatus = 'idle' | 'running' | 'success' | 'error';
 
@@ -26,7 +27,7 @@ const AutopilotButton: React.FC<AutopilotButtonProps> = ({
     showNotification?.('📅 Scheduling video for optimal posting...');
     
     try {
-      const res = await fetch('https://lifestyle-design-backend-v2.onrender.com/api/autopost/run-now', {
+      const res = await fetch(API_ENDPOINTS.autopilotRun(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

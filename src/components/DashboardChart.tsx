@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import ChartWave from './ChartWave';
+import { API_ENDPOINTS } from '../utils/api';
 
 const DashboardChart = () => {
   const [settings, setSettings] = useState({ dailyPostLimit: 3 });
@@ -20,7 +21,7 @@ const DashboardChart = () => {
   useEffect(() => {
     const fetchChartData = async () => {
       try {
-        const res = await fetch('http://localhost:3002/api/chart/status');
+        const res = await fetch(API_ENDPOINTS.chartStatus());
         if (res.ok) {
           const data = await res.json();
           
@@ -97,7 +98,7 @@ const DashboardChart = () => {
     
     const pollForEvents = async () => {
       try {
-        const res = await fetch(`http://localhost:3002/api/events/recent?since=${lastEventCheck}`);
+        const res = await fetch(API_ENDPOINTS.eventsRecent(lastEventCheck));
         if (res.ok) {
           const data = await res.json();
           

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { API_ENDPOINTS } from '../../utils/api';
 
 interface InstagramPerformance {
   likes: number;
@@ -60,7 +61,7 @@ export default function ManualPost() {
   const loadVideos = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3002/api/manual/videos');
+      const response = await fetch(API_ENDPOINTS.manualVideos());
       
       if (!response.ok) {
         throw new Error('Failed to load videos');
@@ -144,7 +145,7 @@ export default function ManualPost() {
     
     setRefreshingAudio(true);
     try {
-      const response = await fetch(`http://localhost:3002/api/manual/refresh-audio/${selectedVideo.videoId}`, {
+      const response = await fetch(API_ENDPOINTS.manualRefreshAudio(selectedVideo.videoId), {
         method: 'POST'
       });
       
@@ -168,7 +169,7 @@ export default function ManualPost() {
     
     setRefreshingCaption(true);
     try {
-      const response = await fetch(`http://localhost:3002/api/manual/refresh-caption/${selectedVideo.videoId}`, {
+      const response = await fetch(API_ENDPOINTS.manualRefreshCaption(selectedVideo.videoId), {
         method: 'POST'
       });
       
@@ -191,7 +192,7 @@ export default function ManualPost() {
     if (!selectedVideo) return;
     
     try {
-      const response = await fetch(`http://localhost:3002/api/manual/videos/${selectedVideo.videoId}`, {
+      const response = await fetch(API_ENDPOINTS.manualVideo(selectedVideo.videoId), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -232,7 +233,7 @@ export default function ManualPost() {
       // Update video settings first
       await updateVideoSettings({});
       
-      const response = await fetch(`http://localhost:3002/api/manual/post-now/${selectedVideo.videoId}`, {
+      const response = await fetch(API_ENDPOINTS.manualPostNow(selectedVideo.videoId), {
         method: 'POST'
       });
       
@@ -265,7 +266,7 @@ export default function ManualPost() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3002/api/manual/schedule/${selectedVideo.videoId}`, {
+      const response = await fetch(API_ENDPOINTS.manualSchedule(selectedVideo.videoId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -471,7 +472,7 @@ export default function ManualPost() {
                 <h3 className="form-label">📽️ Video Preview</h3>
                 <div className="preview-video">
                   <img 
-                    src={`http://localhost:3002/api/manual/video/${selectedVideo.videoId}/stream`}
+                    src={API_ENDPOINTS.manualVideoStream(selectedVideo.videoId)}
                     alt={`Preview for ${selectedVideo.filename}`}
                     style={{
                       width: '100%',

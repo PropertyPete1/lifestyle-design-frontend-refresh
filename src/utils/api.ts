@@ -37,8 +37,27 @@ export const API_ENDPOINTS = {
   // Events
   eventsRecent: (since: number) => apiUrl(`api/events/recent?since=${since}`),
   
-  // Platform specific
-  schedulerStatus: () => apiUrl('api/scheduler/status'),
+  // Manual page endpoints
+  manualVideos: () => apiUrl('api/manual/videos'),
+  manualRefreshAudio: (videoId: string) => apiUrl(`api/manual/refresh-audio/${videoId}`),
+  manualRefreshCaption: (videoId: string) => apiUrl(`api/manual/refresh-caption/${videoId}`),
+  manualVideo: (videoId: string) => apiUrl(`api/manual/videos/${videoId}`),
+  manualPostNow: (videoId: string) => apiUrl(`api/manual/post-now/${videoId}`),
+  manualSchedule: (videoId: string) => apiUrl(`api/manual/schedule/${videoId}`),
+  manualVideoStream: (videoId: string) => apiUrl(`api/manual/video/${videoId}/stream`),
+  
+  // Upload page endpoints
+  uploadGoogleDrive: () => apiUrl('api/upload/google-drive'),
+  uploadDragDrop: () => apiUrl('api/upload/drag-drop'),
+  uploadRefreshCaption: () => apiUrl('api/upload/refresh-caption'),
+  uploadGetRealInstagramCaptions: () => apiUrl('api/upload/get-real-instagram-captions'),
+  uploadDirectVideo: () => apiUrl('api/upload/direct-video'),
+  uploadDropboxStats: () => apiUrl('api/upload/dropbox-stats'),
+  uploadSmartVideoAnalyze: () => apiUrl('api/upload/smart-video-analyze'),
+  uploadDropboxFolder: () => apiUrl('api/upload/dropbox-folder'),
+  uploadDropbox: () => apiUrl('api/upload/dropbox'),
+  uploadSmartDriveSync: () => apiUrl('api/upload/smart-drive-sync'),
+  uploadSyncDropbox: () => apiUrl('api/upload/sync-dropbox'),
 } as const;
 
 export default API_ENDPOINTS;
