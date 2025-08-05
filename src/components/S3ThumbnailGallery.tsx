@@ -38,7 +38,8 @@ const S3ThumbnailGallery: React.FC<S3ThumbnailGalleryProps> = ({
         ? '/api/thumbnails/list'
         : `/api/thumbnails/recent/${platform}?limit=${limit}`;
       
-      const response = await fetch(`http://localhost:3002${endpoint}`);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://lifestyle-design-backend-v2-clean.onrender.com';
+    const response = await fetch(`${API_BASE_URL}${endpoint}`);
       const data = await response.json();
       
       if (data.success) {
