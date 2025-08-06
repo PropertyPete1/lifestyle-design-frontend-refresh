@@ -720,7 +720,12 @@ export default function Settings() {
               min="1" 
               max="50"
               value={maxPosts}
-              onChange={(e) => setMaxPosts(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '' || (!isNaN(parseInt(value)) && parseInt(value) >= 1 && parseInt(value) <= 50)) {
+                  setMaxPosts(value);
+                }
+              }}
             />
           </div>
 
@@ -733,7 +738,12 @@ export default function Settings() {
               min="1" 
               max="30"
               value={repostDelay}
-              onChange={(e) => setRepostDelay(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '' || (!isNaN(parseInt(value)) && parseInt(value) >= 1 && parseInt(value) <= 30)) {
+                  setRepostDelay(value);
+                }
+              }}
             />
           </div>
 
@@ -845,7 +855,12 @@ export default function Settings() {
               min="1" 
               max="30"
               value={fileRetention}
-              onChange={(e) => setFileRetention(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '' || (!isNaN(parseInt(value)) && parseInt(value) >= 1 && parseInt(value) <= 30)) {
+                  setFileRetention(value);
+                }
+              }}
             />
           </div>
 
