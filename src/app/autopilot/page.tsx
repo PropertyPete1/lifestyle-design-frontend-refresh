@@ -439,9 +439,14 @@ export default function AutopilotPage() {
                 min="1000" 
                 step="1000"
                 onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (!isNaN(value) && value >= 0) {
-                    updateSetting('minViews', value);
+                  const value = e.target.value;
+                  // Allow empty input for typing
+                  if (value === '') {
+                    return;
+                  }
+                  const numValue = parseInt(value);
+                  if (!isNaN(numValue) && numValue >= 0) {
+                    updateSetting('minViews', numValue);
                   }
                 }}
               />
