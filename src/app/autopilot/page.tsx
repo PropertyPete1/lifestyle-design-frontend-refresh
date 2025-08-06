@@ -227,23 +227,23 @@ export default function AutopilotPage() {
 
   const runNow = async () => {
     try {
-      showNotification('📅 Scheduling video for optimal posting time...', 'success');
+      showNotification('🚀 Starting comprehensive autopilot run...', 'success');
       
-      const res = await api.post('/autopost/run-now', {
-        filename: 'example-video.mp4',
-        caption: 'Great lifestyle content!',
-        platform: 'instagram'
+      // Call the CORRECT comprehensive autopilot endpoint
+      const res = await api.post('/autopilot/run', {
+        source: 'manual-trigger'
       });
 
-      if (res.message) {
-        showNotification(`✅ Video scheduled! ${res.message}`, 'success');
+      if (res.success) {
+        const videosCount = res.videosProcessed || res.videosScheduled || 0;
+        showNotification(`✅ Autopilot completed! ${videosCount} videos queued`, 'success');
         await loadAutopilotData(); // Reload data to show updated queue
       } else {
-        showNotification(`❌ Scheduling failed: ${res.error || 'Unknown error'}`, 'error');
+        showNotification(`❌ Autopilot failed: ${res.error || 'Unknown error'}`, 'error');
       }
     } catch (error) {
-      console.error('❌ Scheduling failed:', error);
-      showNotification('❌ Scheduling failed', 'error');
+      console.error('❌ Autopilot failed:', error);
+      showNotification('❌ Autopilot failed', 'error');
     }
   };
 
