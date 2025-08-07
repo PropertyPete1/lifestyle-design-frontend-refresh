@@ -70,7 +70,7 @@ export default function VideoThumbnail({ videoUrl, style }: VideoThumbnailProps)
     }
   }, [videoUrl]);
 
-  if (!videoUrl) {
+  if (!videoUrl || videoUrl.includes('example.com') || videoUrl.includes('placeholder')) {
     return (
       <div style={{
         ...style,
@@ -81,7 +81,7 @@ export default function VideoThumbnail({ videoUrl, style }: VideoThumbnailProps)
         color: 'white',
         fontSize: '12px'
       }}>
-        No Video
+        📹 Video
       </div>
     );
   }
