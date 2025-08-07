@@ -613,15 +613,31 @@ export default function AutopilotPage() {
             queueData.map((video, index) => (
               <div key={video.id || index} className="video-card">
                 <div className="video-preview" style={{
-                  backgroundImage: video.thumbnailUrl ? `url(${video.thumbnailUrl})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
                   width: '100px',
                   height: '180px',
                   borderRadius: '8px',
                   position: 'relative',
-                  border: '2px solid #2d3748'
+                  border: '2px solid #2d3748',
+                  overflow: 'hidden'
                 }}>
+                  {video.s3Url ? (
+                    <video 
+                      src={video.s3Url}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                      muted
+                      preload="metadata"
+                    />
+                  ) : (
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    }}></div>
+                  )}
                   <div className="play-overlay" style={{
                     position: 'absolute',
                     top: '50%',
