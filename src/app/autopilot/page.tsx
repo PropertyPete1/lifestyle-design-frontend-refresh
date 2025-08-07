@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import VideoThumbnail from '@/components/VideoThumbnail';
 
 
 
@@ -620,24 +621,13 @@ export default function AutopilotPage() {
                   border: '2px solid #2d3748',
                   overflow: 'hidden'
                 }}>
-                  {video.s3Url ? (
-                    <video 
-                      src={video.s3Url}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover'
-                      }}
-                      muted
-                      preload="metadata"
-                    />
-                  ) : (
-                    <div style={{
+                  <VideoThumbnail 
+                    videoUrl={video.s3Url} 
+                    style={{
                       width: '100%',
-                      height: '100%',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                    }}></div>
-                  )}
+                      height: '100%'
+                    }}
+                  />
                   <div className="play-overlay" style={{
                     position: 'absolute',
                     top: '50%',
