@@ -1098,15 +1098,6 @@ export default function Dashboard() {
                 <span className="menu-icon">⋮</span>
               </div>
               <div className={`dropdown-menu ${menuOpen ? 'show' : ''}`}>
-                <div className="menu-item" onClick={() => handleMenuClick('upload')}>
-                  <div className="menu-item-icon">📤</div>
-                  <span>Upload Videos</span>
-                </div>
-
-                <div className="menu-item" onClick={() => handleMenuClick('manual')}>
-                  <div className="menu-item-icon">✍</div>
-                  <span>Manual Post</span>
-                </div>
                 <div className="menu-item" onClick={() => handleMenuClick('autopilot-page')}>
                   <div className="menu-item-icon">🚀</div>
                   <span>AutoPilot Dashboard</span>
