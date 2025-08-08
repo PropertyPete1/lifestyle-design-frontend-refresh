@@ -1187,7 +1187,7 @@ export default function Dashboard() {
           </div>
 
           {/* Move heatmap below to give wave chart full horizontal space */}
-          <div style={{ marginTop: '20px', width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+          <div style={{ marginTop: '20px' }}>
             <ActivityHeatmap />
           </div>
 
@@ -1334,7 +1334,7 @@ export default function Dashboard() {
           </div>
 
           {/* Move heatmap below to give wave chart full horizontal space (YouTube) */}
-          <div style={{ marginTop: '20px', width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+          <div style={{ marginTop: '20px' }}>
             <ActivityHeatmap />
           </div>
 
