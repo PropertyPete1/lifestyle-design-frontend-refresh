@@ -56,7 +56,12 @@ export default function ActivityHeatmap() {
             onClick={async () => {
               const res = await fetch(API_ENDPOINTS.schedulerAutofill(platform), { method: 'POST' })
               if (res.ok) {
-                alert('Smart Scheduler filled optimized time slots based on audience data.')
+                try {
+                  const { toast } = await import('./NotificationSystem')
+                  toast.show('Smart Scheduler filled optimized time slots.', 'success')
+                } catch {
+                  // no-op fallback
+                }
               }
             }}
             style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(99,102,241,0.18))', color: '#fff' }}
@@ -90,8 +95,12 @@ export default function ActivityHeatmap() {
                   const levels = cells.map(c => c.level)
                   const level = levels.sort((a,b) => levels.filter(v=>v===a).length - levels.filter(v=>v===b).length).pop() || 'minimal'
                   const label = `${start}-${end}`
+                  const now = new Date();
+                  const isCurrentRow = dIdx === now.getDay();
+                  const isCurrentBlock = Math.floor(now.getHours() / 6) === blockIdx;
+                  const style: React.CSSProperties = (isCurrentRow && isCurrentBlock) ? { boxShadow: '0 0 0 2px rgba(148,163,184,0.6), 0 0 24px rgba(99,102,241,0.45)' } : {};
                   return (
-                    <div className={`activity-cell ${level}`} data-hour={label} title={`Avg reach: ${avg}`} key={`d-${dIdx}-b-${blockIdx}`}></div>
+                    <div className={`activity-cell ${level}`} style={style} data-hour={label} title={`Avg reach: ${avg}`} key={`d-${dIdx}-b-${blockIdx}`}></div>
                   )
                 })}
               </div>

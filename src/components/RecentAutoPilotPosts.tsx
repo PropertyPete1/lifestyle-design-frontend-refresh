@@ -4,6 +4,7 @@ type AutoPilotPost = {
   platform: 'Instagram' | 'YouTube';
   thumbnailUrl: string;
   timestamp: string;
+  autofill?: boolean;
 };
 
 const platformStyles = {
@@ -139,7 +140,7 @@ const RecentAutoPilotPosts: React.FC<{ posts: AutoPilotPost[] }> = ({ posts = []
                     fontWeight: '500',
                     marginBottom: '4px'
                   }}>
-                    {post.platform} post published
+                    {post.platform} post published {post.autofill ? ' • Auto-filled 🧠' : ''}
                   </div>
                   <div style={{
                     color: '#888',

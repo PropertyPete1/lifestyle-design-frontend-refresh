@@ -8,7 +8,7 @@ import HeartStatusCard from '../../components/HeartStatusCard';
 import ActivityHeatmap from '../../components/ActivityHeatmap';
 import RecentAutoPilotPostsWrapper from '../../components/RecentAutoPilotPostsWrapper';
 import { API_ENDPOINTS } from '../../utils/api';
-// import NotificationSystem from '../../components/NotificationSystem'; // DISABLED
+import NotificationSystem from '../../components/NotificationSystem';
 
 type DashboardSettings = {
   autopilotEnabled: boolean
@@ -1126,6 +1126,10 @@ export default function Dashboard() {
         </header>
 
 
+
+        {/* Notifications */}
+        {/* Lightweight toast system */}
+        <NotificationSystem />
 
         {/* Instagram Data */}
         <div id="instagram-data" className={`platform-data ${currentPlatform === 'instagram' ? 'active' : ''}`}>
