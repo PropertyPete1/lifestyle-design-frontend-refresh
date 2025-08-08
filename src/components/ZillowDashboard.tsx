@@ -58,16 +58,20 @@ const ZillowDashboard = () => {
   ];
 
   const ListingModeToggle = ({ className = "" }) => (
-    <div className={`flex gap-2 ${className}`}>
+    <div className={`flex bg-gray-900 rounded-full p-1 ${className}`}>
       {[
-        { id: 'rent', label: '🏠 Rent' },
-        { id: 'sale', label: '🏡 Sale' },
-        { id: 'both', label: '🔁 Both' }
+        { id: 'rent', label: '🏠 Rent', color: 'from-blue-500 to-cyan-500' },
+        { id: 'sale', label: '🏡 Sale', color: 'from-green-500 to-emerald-500' },
+        { id: 'both', label: '🔁 Both', color: 'from-purple-500 to-pink-500' }
       ].map(mode => (
         <button
           key={mode.id}
           onClick={() => setListingMode(mode.id)}
-          className={`${listingMode === mode.id ? 'platform-btn active' : 'platform-btn'}`}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+            listingMode === mode.id
+              ? `bg-gradient-to-r ${mode.color} text-white shadow-lg`
+              : 'text-gray-400 hover:text-white'
+          }`}
         >
           {mode.label}
         </button>
@@ -275,9 +279,9 @@ const ZillowDashboard = () => {
         <h1 className="text-3xl font-bold text-white">Messages</h1>
         <div className="flex gap-3">
           <ListingModeToggle className="hidden sm:flex" />
-          <button 
+          <button
             onClick={() => setShowSendAllModal(true)}
-            className="nav-button font-bold px-6 py-3 shadow-lg"
+            className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 flex items-center shadow-lg hover:shadow-purple-500/25"
           >
             <Zap className="w-5 h-5 mr-2" />
             Send All Messages
