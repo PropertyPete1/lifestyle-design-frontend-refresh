@@ -1,10 +1,32 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { API_ENDPOINTS } from '@/utils/api'
 
 export default function ActivityHeatmap() {
+  const [platform, setPlatform] = useState<'instagram' | 'youtube'>(() => (typeof window !== 'undefined' && (localStorage.getItem('heatmapPlatform') as any)) || 'instagram')
+  const [grid, setGrid] = useState<Array<Array<{ score: number; reach: number; level: string; count: number }>>>([])
+  const dayNames = useMemo(() => ['SUN','MON','TUE','WED','THU','FRI','SAT'], [])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const url = API_ENDPOINTS.audienceHeatmap(platform)
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        setGrid(data.grid || [])
+      }
+    }
+    fetchData()
+    localStorage.setItem('heatmapPlatform', platform)
+  }, [platform])
+
   return (
     <div className="activity-tracker-container">
+      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+        <button onClick={() => setPlatform('instagram')} style={{ padding: '6px 10px', borderRadius: 8, border: platform==='instagram' ? '1px solid #ff7ab6' : '1px solid rgba(255,255,255,0.2)', background: platform==='instagram' ? 'rgba(255,105,180,0.15)' : 'transparent', color: '#fff' }}>Instagram</button>
+        <button onClick={() => setPlatform('youtube')} style={{ padding: '6px 10px', borderRadius: 8, border: platform==='youtube' ? '1px solid #ff6b6b' : '1px solid rgba(255,255,255,0.2)', background: platform==='youtube' ? 'rgba(255,0,0,0.15)' : 'transparent', color: '#fff' }}>YouTube</button>
+      </div>
       <div className="activity-heatmap">
         <div className="heatmap-container">
           <div className="heatmap-labels">
@@ -12,59 +34,32 @@ export default function ActivityHeatmap() {
               <span>00</span><span>06</span><span>12</span><span>18</span><span>24</span>
             </div>
             <div className="day-labels">
-              <span>MON</span>
-              <span>TUE</span>
-              <span>WED</span>
-              <span>THU</span>
-              <span>FRI</span>
-              <span>SAT</span>
-              <span>SUN</span>
+              {dayNames.map((d, idx) => (
+                <span key={d}>{d}</span>
+              ))}
             </div>
           </div>
 
           <div className="heatmap-grid">
-            <div className="day-row" data-day="mon">
-              <div className="activity-cell low" data-hour="0-6"></div>
-              <div className="activity-cell medium" data-hour="6-12"></div>
-              <div className="activity-cell high" data-hour="12-18"></div>
-              <div className="activity-cell very-high" data-hour="18-24"></div>
-            </div>
-            <div className="day-row" data-day="tue">
-              <div className="activity-cell low" data-hour="0-6"></div>
-              <div className="activity-cell high" data-hour="6-12"></div>
-              <div className="activity-cell very-high" data-hour="12-18"></div>
-              <div className="activity-cell medium" data-hour="18-24"></div>
-            </div>
-            <div className="day-row" data-day="wed">
-              <div className="activity-cell minimal" data-hour="0-6"></div>
-              <div className="activity-cell medium" data-hour="6-12"></div>
-              <div className="activity-cell very-high" data-hour="12-18"></div>
-              <div className="activity-cell high" data-hour="18-24"></div>
-            </div>
-            <div className="day-row" data-day="thu">
-              <div className="activity-cell low" data-hour="0-6"></div>
-              <div className="activity-cell high" data-hour="6-12"></div>
-              <div className="activity-cell extreme" data-hour="12-18"></div>
-              <div className="activity-cell very-high" data-hour="18-24"></div>
-            </div>
-            <div className="day-row" data-day="fri">
-              <div className="activity-cell minimal" data-hour="0-6"></div>
-              <div className="activity-cell medium" data-hour="6-12"></div>
-              <div className="activity-cell extreme" data-hour="12-18"></div>
-              <div className="activity-cell extreme" data-hour="18-24"></div>
-            </div>
-            <div className="day-row" data-day="sat">
-              <div className="activity-cell low" data-hour="0-6"></div>
-              <div className="activity-cell low" data-hour="6-12"></div>
-              <div className="activity-cell high" data-hour="12-18"></div>
-              <div className="activity-cell very-high" data-hour="18-24"></div>
-            </div>
-            <div className="day-row" data-day="sun">
-              <div className="activity-cell minimal" data-hour="0-6"></div>
-              <div className="activity-cell low" data-hour="6-12"></div>
-              <div className="activity-cell medium" data-hour="12-18"></div>
-              <div className="activity-cell high" data-hour="18-24"></div>
-            </div>
+            {grid.length === 7 && grid.map((row, dIdx) => (
+              <div className="day-row" key={`d-${dIdx}`}>
+                {[0,1,2,3].map((blockIdx) => {
+                  const start = blockIdx * 6
+                  const end = start + 6
+                  // Average reach for 6-hour block
+                  const cells = row.slice(start, end)
+                  const sum = cells.reduce((a,c) => a + (c?.reach || 0), 0)
+                  const avg = Math.round(sum / (cells.length || 1))
+                  // Determine level by majority cell level
+                  const levels = cells.map(c => c.level)
+                  const level = levels.sort((a,b) => levels.filter(v=>v===a).length - levels.filter(v=>v===b).length).pop() || 'minimal'
+                  const label = `${start}-${end}`
+                  return (
+                    <div className={`activity-cell ${level}`} data-hour={label} title={`Avg reach: ${avg}`} key={`d-${dIdx}-b-${blockIdx}`}></div>
+                  )
+                })}
+              </div>
+            ))}
           </div>
         </div>
 
