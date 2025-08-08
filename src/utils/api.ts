@@ -40,6 +40,10 @@ export const API_ENDPOINTS = {
   audienceHeatmap: (platform: 'instagram' | 'youtube' = 'instagram', days?: number) => apiUrl(`api/audience-heatmap?platform=${platform}${days ? `&days=${days}` : ''}`),
   optimalTimes: (platform: 'instagram' | 'youtube' = 'instagram', days?: number) => apiUrl(`api/optimal-times?platform=${platform}${days ? `&days=${days}` : ''}`),
   performanceHeatmap: (platform: 'instagram' | 'youtube' = 'instagram', days?: number) => apiUrl(`api/performance-heatmap?platform=${platform}${days ? `&days=${days}` : ''}`),
+
+  // Smart Scheduler + AI
+  schedulerAutofill: (platform: 'instagram' | 'youtube' = 'instagram', maxPostsPerDay?: number) => apiUrl(`api/scheduler/autofill?platform=${platform}${maxPostsPerDay ? `&maxPostsPerDay=${maxPostsPerDay}` : ''}`),
+  audienceSummary: (platform: 'instagram' | 'youtube' = 'instagram', days?: number) => apiUrl(`api/audience-summary?platform=${platform}${days ? `&days=${days}` : ''}`),
   
   // Events
   eventsRecent: (since: number) => apiUrl(`api/events/recent?since=${since}`),

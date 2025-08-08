@@ -6,6 +6,8 @@ import { API_ENDPOINTS } from '@/utils/api'
 export default function ActivityHeatmap() {
   const [platform, setPlatform] = useState<'instagram' | 'youtube'>(() => (typeof window !== 'undefined' && (localStorage.getItem('heatmapPlatform') as any)) || 'instagram')
   const [grid, setGrid] = useState<Array<Array<{ score: number; reach: number; level: string; count: number }>>>([])
+  const [summary, setSummary] = useState<string>('')
+  const [optimal, setOptimal] = useState<string[]>([])
   const dayNames = useMemo(() => ['SUN','MON','TUE','WED','THU','FRI','SAT'], [])
 
   useEffect(() => {
@@ -17,7 +19,21 @@ export default function ActivityHeatmap() {
         setGrid(data.grid || [])
       }
     }
-    fetchData()
+    const fetchSummary = async () => {
+      const res = await fetch(API_ENDPOINTS.audienceSummary(platform))
+      if (res.ok) {
+        const data = await res.json();
+        setSummary(data.summary || '')
+      }
+    }
+    const fetchOptimal = async () => {
+      const res = await fetch(API_ENDPOINTS.optimalTimes(platform))
+      if (res.ok) {
+        const data = await res.json();
+        setOptimal(data.top3 || [])
+      }
+    }
+    fetchData(); fetchSummary(); fetchOptimal();
     localStorage.setItem('heatmapPlatform', platform)
   }, [platform])
 
@@ -28,6 +44,26 @@ export default function ActivityHeatmap() {
         <button onClick={() => setPlatform('youtube')} style={{ padding: '6px 10px', borderRadius: 8, border: platform==='youtube' ? '1px solid #ff6b6b' : '1px solid rgba(255,255,255,0.2)', background: platform==='youtube' ? 'rgba(255,0,0,0.15)' : 'transparent', color: '#fff' }}>YouTube</button>
       </div>
       <div className="activity-heatmap">
+        {/* Controls */}
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div></div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {optimal.map((t) => (
+              <span key={t} style={{ padding: '4px 8px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', color: '#9bd', fontSize: 12 }}>⏱ {t}</span>
+            ))}
+          </div>
+          <button
+            onClick={async () => {
+              const res = await fetch(API_ENDPOINTS.schedulerAutofill(platform), { method: 'POST' })
+              if (res.ok) {
+                alert('Smart Scheduler filled optimized time slots based on audience data.')
+              }
+            }}
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(99,102,241,0.18))', color: '#fff' }}
+          >
+            AutoFill Smart Times
+          </button>
+        </div>
         <div className="heatmap-container">
           <div className="heatmap-labels">
             <div className="time-labels">
@@ -173,6 +209,21 @@ export default function ActivityHeatmap() {
           .activity-cell { width: clamp(32px, 15vw, 46px); }
         }
       `}</style>
+      {summary && (
+        <div style={{
+          marginTop: '12px',
+          width: 'min(1100px, 100vw - 32px)',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 12,
+          padding: '12px 14px',
+          color: 'rgba(255,255,255,0.86)'
+        }} className="audience-summary-card">
+          🧠 {summary}
+        </div>
+      )}
     </div>
   )
 }
