@@ -1,7 +1,7 @@
 'use client';
 
-import ZillowDashboard from '@/components/ZillowDashboard';
+import ZillowAppDashboard from '@/components/ZillowAppDashboard';
 
 export default function ZillowPage() {
-  return <ZillowDashboard />;
+  return <ZillowAppDashboard />;
 }
