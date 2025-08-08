@@ -1191,51 +1191,30 @@ export default function Dashboard() {
             <ActivityHeatmap />
           </div>
 
-          {/* 🚀 Manual Post Control Panel */}
-          <div className="manual-post-panel" style={{
-            marginTop: '20px',
+          {/* 🚀 Manual Post Control Panel (YouTube) */}
+          <div className="manual-post-panel pro" style={{
+            marginTop: '32px',
+            marginBottom: '24px',
             display: 'flex',
             justifyContent: 'center',
-            gap: '15px'
+            alignItems: 'center',
+            gap: '16px',
+            width: '100%',
+            maxWidth: '1100px',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            position: 'relative',
+            zIndex: 2,
+            padding: '0 16px'
           }}>
             <button
               onClick={handleManualPostNow}
               disabled={manualPostRunning}
-              className="manual-post-button"
-              style={{
-                backgroundColor: manualPostRunning ? '#666' : '#E1306C',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px 24px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                cursor: manualPostRunning ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(225, 48, 108, 0.3)',
-                transition: 'all 0.3s ease',
-                opacity: manualPostRunning ? 0.6 : 1
-              }}
-              onMouseEnter={(e) => {
-                if (!manualPostRunning) {
-                  e.currentTarget.style.backgroundColor = '#C13584';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(225, 48, 108, 0.4)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!manualPostRunning) {
-                  e.currentTarget.style.backgroundColor = '#E1306C';
-                  e.currentTarget.style.transform = 'translateY(0px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(225, 48, 108, 0.3)';
-                }
-              }}
+              className={`manual-post-button-pro ${manualPostRunning ? 'disabled' : ''}`}
             >
               {manualPostRunning ? (
                 <>
-                  <span style={{ animation: 'spin 1s linear infinite' }}>⏳</span>
+                  <span className="spinner" />
                   Posting...
                 </>
               ) : (
@@ -1244,8 +1223,48 @@ export default function Dashboard() {
                 </>
               )}
             </button>
-            
-
+            <style jsx>{`
+              .manual-post-button-pro {
+                --glow: rgba(225, 48, 108, 0.55);
+                --start: #ff2e88;
+                --end: #ff9950;
+                background: linear-gradient(135deg, var(--start), var(--end));
+                color: #ffffff;
+                border: 1px solid rgba(255,255,255,0.18);
+                padding: 14px 28px;
+                font-size: 17px;
+                font-weight: 800;
+                letter-spacing: 0.3px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px var(--glow), inset 0 0 12px rgba(255,255,255,0.08);
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                position: relative;
+                overflow: hidden;
+                transition: transform 180ms ease, box-shadow 200ms ease, filter 200ms ease;
+                text-transform: uppercase;
+              }
+              .manual-post-button-pro:hover { transform: translateY(-2px) scale(1.02); filter: saturate(115%); box-shadow: 0 16px 40px var(--glow); }
+              .manual-post-button-pro:active { transform: translateY(0) scale(0.99); }
+              .manual-post-button-pro.disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(10%); }
+              .manual-post-button-pro::after {
+                content: '';
+                position: absolute;
+                top: 0; left: -120%;
+                width: 120%; height: 100%;
+                background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+                transform: skewX(-20deg);
+                animation: shine 3.2s ease-in-out infinite;
+              }
+              @keyframes shine { 0%{ left: -120%; } 60%{ left: 140%; } 100%{ left: 140%; } }
+              .spinner {
+                width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.6); border-top-color: #fff; border-radius: 50%; display: inline-block;
+                animation: spin 1s linear infinite;
+              }
+              @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+            `}</style>
           </div>
 
           <div className="grid-layout">
@@ -1309,12 +1328,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid-layout" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+          <div className="grid-layout" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)', marginTop: 0 }}>
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
           </div>
 
-          {/* Move heatmap below to give wave chart full horizontal space */}
+          {/* Move heatmap below to give wave chart full horizontal space (YouTube) */}
           <div style={{ marginTop: '20px', width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
             <ActivityHeatmap />
           </div>
