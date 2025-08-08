@@ -283,13 +283,15 @@ const DashboardChart = () => {
       className="chart-container responsive-wave" 
       style={{ 
         position: 'relative', 
-        width: '100%', 
+        width: '100vw',
+        marginLeft: 'calc(50% - 50vw)',
+        marginRight: 'calc(50% - 50vw)',
         height: '16vw', // scale height with width
-        minHeight: '120px',
-        maxHeight: '220px',
+        minHeight: '140px',
+        maxHeight: '260px',
         marginTop: '20px',
         backgroundColor: '#121212',
-        borderRadius: '6px',
+        borderRadius: 0,
         overflow: 'hidden'
       }}
     >

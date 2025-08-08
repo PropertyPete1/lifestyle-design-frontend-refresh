@@ -1181,13 +1181,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid-layout" style={{ width: '100%' }}>
+          <div className="grid-layout" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
           </div>
 
           {/* Move heatmap below to give wave chart full horizontal space */}
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: '20px', width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
             <ActivityHeatmap />
           </div>
 
@@ -1309,13 +1309,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid-layout" style={{ width: '100%' }}>
+          <div className="grid-layout" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
           </div>
 
           {/* Move heatmap below to give wave chart full horizontal space */}
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: '20px', width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
             <ActivityHeatmap />
           </div>
 
