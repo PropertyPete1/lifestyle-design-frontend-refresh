@@ -295,7 +295,7 @@ const DashboardChart = () => {
       }}
     >
       {/* Inner content inset to avoid touching screen edges */}
-      <div style={{ position: 'absolute', left: 16, right: 16, top: 0, bottom: 0 }}>
+      <div style={{ position: 'absolute', left: 32, right: 16, top: 0, bottom: 0 }}>
       {/* Instagram Wave - Pink */}
       <ChartWave 
         color="rgba(255, 105, 180, 0.9)" 
