@@ -39,6 +39,8 @@ export default function ZillowAppDashboard() {
   const [isMobile, setIsMobile] = useState(false);
   const [batchResults, setBatchResults] = useState<BatchResult[]>([]);
   const [showBatchResults, setShowBatchResults] = useState(false);
+  const [listings, setListings] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
 
   // Sample stats for dashboard
   const [scraperStats] = useState({
@@ -139,6 +141,50 @@ export default function ZillowAppDashboard() {
       notify(`✅ Scraper run complete. Found: ${data?.count ?? 0} listings`);
     } catch (e: any) {
       notify(`❌ Scraper failed\n${e.message || e}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load scraped listings
+  const fetchListings = async () => {
+    try {
+      setLoading(true);
+      const q = propertyType && propertyType !== 'both' ? `?propertyType=${propertyType}` : '';
+      const data = await apiFetch(`/api/scraper/listings${q}`);
+      setListings(data?.listings || []);
+    } catch (e: any) {
+      notify(`❌ Failed to load listings\n${e.message || e}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load logs
+  const fetchLogs = async () => {
+    try {
+      setLoading(true);
+      const data = await apiFetch('/api/logs');
+      setLogs(data?.logs || []);
+    } catch (e: any) {
+      notify(`❌ Failed to load logs\n${e.message || e}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Send single listing message
+  const sendOne = async (listing: any) => {
+    try {
+      setLoading(true);
+      await apiFetch('/api/message/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listing }),
+      });
+      notify(`✅ Sent: ${listing.address}`);
+    } catch (e: any) {
+      notify(`❌ Send failed\n${e.message || e}`);
     } finally {
       setLoading(false);
     }
@@ -481,6 +527,233 @@ export default function ZillowAppDashboard() {
     switch (activeTab) {
       case 'dashboard': return <DashboardContent />;
       case 'settings': return <SettingsContent />;
+      case 'scraper':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold text-white">Scraper</h1>
+              <div className="flex items-center gap-3">
+                <ListingModeToggle />
+                <button
+                  onClick={runScraper}
+                  disabled={loading}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg"
+                >
+                  <RefreshCw className={`w-4 h-4 inline mr-2 ${loading ? 'animate-spin' : ''}`} /> Start Zillow Search
+                </button>
+                <button
+                  onClick={fetchListings}
+                  disabled={loading}
+                  className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg"
+                >
+                  Refresh Results
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Address</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Type</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Owner</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {listings.map((l) => (
+                      <tr key={l._id || l.link} className="border-t border-gray-800">
+                        <td className="px-4 py-3 text-white text-sm">{l.address}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${l.type === 'rent' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
+                            {l.type === 'rent' ? 'Rent' : 'Sale'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-300 text-sm">{l.ownerName || '-'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <button
+                            onClick={() => sendOne({ address: l.address, link: l.link, ownerName: l.ownerName, type: l.type })}
+                            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-2 px-3 rounded-lg"
+                          >
+                            Send Message
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {listings.length === 0 && (
+                      <tr>
+                        <td className="px-4 py-6 text-center text-gray-400" colSpan={4}>No listings yet. Run the scraper, then Refresh Results.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      case 'messages':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold text-white">Messages</h1>
+              <div className="flex items-center gap-3">
+                <ListingModeToggle />
+                <button
+                  onClick={sendAll}
+                  disabled={loading}
+                  className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-medium py-2 px-4 rounded-lg"
+                >
+                  <Zap className="w-4 h-4 inline mr-2" /> Send All
+                </button>
+              </div>
+            </div>
+
+            {/* reuse listings view for convenience */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Address</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Type</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Owner</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {listings.map((l) => (
+                      <tr key={l._id || l.link} className="border-t border-gray-800">
+                        <td className="px-4 py-3 text-white text-sm">{l.address}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${l.type === 'rent' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
+                            {l.type === 'rent' ? 'Rent' : 'Sale'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-300 text-sm">{l.ownerName || '-'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <button
+                            onClick={() => sendOne({ address: l.address, link: l.link, ownerName: l.ownerName, type: l.type })}
+                            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-2 px-3 rounded-lg"
+                          >
+                            Send Message
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {listings.length === 0 && (
+                      <tr>
+                        <td className="px-4 py-6 text-center text-gray-400" colSpan={4}>No listings loaded. Go to Scraper tab → Refresh Results.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {showBatchResults && batchResults.length > 0 && (
+              <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
+                <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+                  <CheckCircle className="w-6 h-6 mr-2 text-green-400" /> Batch Send Results
+                </h3>
+                <div className="space-y-3">
+                  {batchResults.map((result, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                      <div className="flex items-center">
+                        {result.status === 'sent' ? (
+                          <CheckCircle className="w-5 h-5 text-green-400 mr-3" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-400 mr-3" />
+                        )}
+                        <span className="text-white font-medium">{result.address}</span>
+                        <span className={`ml-3 px-2 py-1 rounded text-xs font-medium ${
+                          result.type === 'rent' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'
+                        }`}>
+                          {result.type === 'rent' ? 'Rent' : 'Sale'}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-sm font-medium ${
+                          result.status === 'sent' ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {result.status === 'sent' ? '✅ Sent' : '❌ Failed'}
+                        </span>
+                        {result.reason && (
+                          <p className="text-xs text-gray-400">{result.reason}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case 'logs':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold text-white">Logs</h1>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={fetchLogs}
+                  disabled={loading}
+                  className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg"
+                >
+                  Refresh
+                </button>
+                <button
+                  onClick={exportLogs}
+                  disabled={loading}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-2 px-4 rounded-lg"
+                >
+                  Export to Sheets
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Address</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Owner</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Type</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Status</th>
+                      <th className="px-4 py-3 text-left text-gray-300 text-sm">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.map((lg) => (
+                      <tr key={lg._id} className="border-t border-gray-800">
+                        <td className="px-4 py-3 text-white text-sm">{lg.address}</td>
+                        <td className="px-4 py-3 text-gray-300 text-sm">{lg.ownerName || '-'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${lg.type === 'rent' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
+                            {lg.type === 'rent' ? 'Rent' : 'Sale'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${lg.status === 'sent' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {lg.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-300 text-sm">{new Date(lg.sentAt || lg.createdAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                    {logs.length === 0 && (
+                      <tr>
+                        <td className="px-4 py-6 text-center text-gray-400" colSpan={5}>No logs yet. Send messages, then Refresh.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
       default: return <DashboardContent />;
     }
   };
