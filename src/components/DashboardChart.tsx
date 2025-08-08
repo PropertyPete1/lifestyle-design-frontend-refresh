@@ -239,17 +239,21 @@ const DashboardChart = () => {
 
   // ✅ Calculate dynamic wave properties exactly per specifications
   const calculateWaveProps = (platform: 'instagram' | 'youtube') => {
-    const platformInfo = platformData[platform];
+    const platformInfo = platformData[platform] as any;
     const todayPosts = platformInfo.todayPosts;
     const isActive = platformInfo.active;
+    const hasTrendingAudio = Boolean(platformInfo.trendingAudio);
     
     // 🧬 LINE BEHAVIOR IMPLEMENTATION
     
     // 1. BASE SPEED: Slower when autopilot OFF, faster when ON
     const baseSpeed = platform === 'instagram' ? 1.2 : 1.4;
-    const speed = autopilotOn 
-      ? baseSpeed * Math.max(0.8, 2 - (autopilotVolume / 10)) // Faster with more posts
-      : baseSpeed * 0.4; // Slow when autopilot OFF
+    let speed = autopilotOn 
+      ? baseSpeed * Math.max(0.8, 2 - (autopilotVolume / 10))
+      : baseSpeed * 0.4;
+    if (lastPostSpike && Date.now() - lastPostSpike < 5000) {
+      speed *= 1.3;
+    }
     
     // 2. VERTICAL POSITION: Lines rise based on posts per day
     const postRatio = Math.min(todayPosts / settings.dailyPostLimit, 1);
@@ -261,15 +265,18 @@ const DashboardChart = () => {
     
     // 3. AMPLITUDE: Based on engagement (larger waves = more engagement)
     const baseAmplitude = platform === 'instagram' ? 12 : 9;
-    const engagementMultiplier = 0.5 + (engagementScore * 1.5); // 0.5x to 2x based on engagement
-    const amplitude = autopilotOn
+    const engagementMultiplier = 0.5 + (engagementScore * 1.5);
+    let amplitude = autopilotOn
       ? isActive 
-        ? baseAmplitude * engagementMultiplier // Engagement-responsive waves
-        : baseAmplitude * 0.3 // Small waves when inactive
-      : baseAmplitude * 0.4; // Low amplitude when autopilot OFF
+        ? baseAmplitude * engagementMultiplier
+        : baseAmplitude * 0.3
+      : baseAmplitude * 0.4;
+    if (hasTrendingAudio) {
+      amplitude *= 1.2;
+    }
     
     // 4. GLOW EFFECT: New record detection
-    const isGlowing = newHigh && isActive;
+    const isGlowing = (newHigh && isActive) || hasTrendingAudio;
     
     return { speed, amplitude, offsetY, isGlowing };
   };
@@ -331,7 +338,7 @@ const DashboardChart = () => {
             top: 0,
             width: '2px',
             height: '100%',
-            background: 'linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.2))',
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.2))',
             animation: 'pulse 0.5s ease-in-out infinite alternate',
             pointerEvents: 'none'
           }}
