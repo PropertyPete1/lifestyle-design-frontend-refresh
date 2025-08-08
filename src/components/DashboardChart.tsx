@@ -295,6 +295,8 @@ const DashboardChart = () => {
         overflow: 'hidden'
       }}
     >
+      {/* Horizontal nudge to align with heatmap grid area */}
+      <div style={{ position: 'absolute', inset: 0, transform: 'translateX(24px)' }}>
       {/* Instagram Wave - Pink */}
       <ChartWave 
         color="rgba(255, 105, 180, 0.9)" 
@@ -336,6 +338,7 @@ const DashboardChart = () => {
           }}
         />
       )}
+      </div>
       
       <style jsx>{`
         @keyframes pulse {
