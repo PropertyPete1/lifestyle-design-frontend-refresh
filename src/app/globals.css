@@ -200,6 +200,25 @@ body {
     transform: translateY(0);
 }
 
+/* Ensure the three-dots (kebab) dropdown stays within the viewport on mobile */
+@media (max-width: 768px) {
+  .menu-container {
+    position: static; /* avoid clipping by relatively positioned parent */
+  }
+  .dropdown-menu {
+    position: fixed; /* anchor to viewport instead of the button */
+    top: 72px; /* below header */
+    right: max(12px, env(safe-area-inset-right));
+    left: auto;
+    min-width: 220px;
+    max-width: calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));
+    transform: none !important; /* prevent off-screen translate */
+    max-height: 60vh; /* prevent vertical overflow */
+    overflow-y: auto;
+    z-index: 1001; /* above overlay */
+  }
+}
+
 .menu-item {
     display: flex;
     align-items: center;
