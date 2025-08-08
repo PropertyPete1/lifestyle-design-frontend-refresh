@@ -1187,6 +1187,31 @@ export default function Dashboard() {
             
             {/* Replaced hearts with activity heatmap preview */}
             <ActivityHeatmap />
+
+            {/* Heatmap Explanation */}
+            <div style={{
+              marginTop: '10px',
+              color: 'rgba(255,255,255,0.75)',
+              fontSize: '12px',
+              lineHeight: 1.6,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '8px',
+              padding: '12px'
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>📊 What the Numbers Mean:</div>
+              <div>00 = Midnight (12 AM)<br/>06 = 6 AM<br/>12 = Noon (12 PM)<br/>18 = 6 PM<br/>24 = Midnight again</div>
+              <div style={{ marginTop: 6 }}>So "12-18" means 12 PM to 6 PM (afternoon)</div>
+              <div style={{ fontWeight: 600, marginTop: 10 }}>🎨 Color System:</div>
+              <div>
+                Dark Gray = Minimal activity<br/>
+                Blue = Low activity<br/>
+                Purple = Medium activity<br/>
+                Pink = High activity<br/>
+                Red = Very High activity<br/>
+                Bright Red = Peak activity (with pulsing animation)
+              </div>
+            </div>
           </div>
 
           {/* 📝 Chart Footer Note */}
@@ -1318,6 +1343,31 @@ export default function Dashboard() {
             
             {/* Replaced hearts with activity heatmap preview */}
             <ActivityHeatmap />
+
+            {/* Heatmap Explanation */}
+            <div style={{
+              marginTop: '10px',
+              color: 'rgba(255,255,255,0.75)',
+              fontSize: '12px',
+              lineHeight: 1.6,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '8px',
+              padding: '12px'
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>📊 What the Numbers Mean:</div>
+              <div>00 = Midnight (12 AM)<br/>06 = 6 AM<br/>12 = Noon (12 PM)<br/>18 = 6 PM<br/>24 = Midnight again</div>
+              <div style={{ marginTop: 6 }}>So "12-18" means 12 PM to 6 PM (afternoon)</div>
+              <div style={{ fontWeight: 600, marginTop: 10 }}>🎨 Color System:</div>
+              <div>
+                Dark Gray = Minimal activity<br/>
+                Blue = Low activity<br/>
+                Purple = Medium activity<br/>
+                Pink = High activity<br/>
+                Red = Very High activity<br/>
+                Bright Red = Peak activity (with pulsing animation)
+              </div>
+            </div>
           </div>
 
           {/* 📝 Chart Footer Note */}
