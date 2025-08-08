@@ -69,6 +69,8 @@ export default function Dashboard() {
     instagram: { active: false, todayPosts: 0, reach: 0, engagement: 0 },
     youtube: { active: false, todayPosts: 0, reach: 0, engagement: 0 }
   });
+  const [trendingFlags, setTrendingFlags] = useState<{ instagram: boolean; youtube: boolean }>({ instagram: false, youtube: false });
+  const [lastPostSpikeByPlatform, setLastPostSpikeByPlatform] = useState<{ instagram: number | null; youtube: number | null }>({ instagram: null, youtube: null });
   const [lastQueueUpdate, setLastQueueUpdate] = useState<number>(0);
   
   // ✅ NEW: Enhanced activity feed and chart state
@@ -359,6 +361,16 @@ export default function Dashboard() {
               reach: chartData.platformData.youtube?.reach || 0,
               engagement: engagementScore // Use global engagement score
             }
+          });
+
+          // Extra visual flags
+          setTrendingFlags({
+            instagram: !!(chartData.platformData.instagram?.trending || chartData.platformData.instagram?.trendingAudio),
+            youtube: !!(chartData.platformData.youtube?.trending || chartData.platformData.youtube?.trendingAudio),
+          });
+          setLastPostSpikeByPlatform({
+            instagram: chartData.platformData.instagram?.lastPostTime || null,
+            youtube: chartData.platformData.youtube?.lastPostTime || null,
           });
         }
         
@@ -723,24 +735,33 @@ export default function Dashboard() {
           ctx.stroke();
         }
         
-        // Calculate pulse effects based on real data and autopilot volume
-        const queueIntensity = Math.min(queueSize / 10, 1); // Max intensity at 10+ videos
-        const volumeIntensity = Math.min(autopilotVolume / 5, 1); // Max intensity at 5+ posts/day
-        const runningGlow = autopilotRunning ? 0.3 : 0;
-        const burstEffect = Date.now() - lastQueueUpdate < 5000 ? Math.sin(animationFrame * 0.5) * 0.5 : 0;
+        // Calculate pulse effects per platform
+        const pData = platform === 'youtube' ? platformData.youtube : platformData.instagram;
+        const pTrending = platform === 'youtube' ? trendingFlags.youtube : trendingFlags.instagram;
+        const pSpikeTime = platform === 'youtube' ? lastPostSpikeByPlatform.youtube : lastPostSpikeByPlatform.instagram;
+        const recentSpike = pSpikeTime ? (Date.now() - Number(pSpikeTime) < 6000) : false;
+        const spikeWave = recentSpike ? Math.sin(animationFrame * 0.6) * 0.6 : 0;
+        const queueIntensity = Math.min(queueSize / 10, 1);
+        const volumeIntensity = Math.min(autopilotVolume / 5, 1);
+        const engagementIntensity = Math.max(0, Math.min(pData.engagement || 0, 1));
+        const activeBoost = pData.active ? 0.5 : 0.1;
+        const trendingBoost = pTrending ? 0.3 : 0;
+        const runningGlow = (pData.active ? 0.3 : 0) + (pTrending ? 0.2 : 0);
+        const burstEffect = spikeWave || (Date.now() - lastQueueUpdate < 5000 ? Math.sin(animationFrame * 0.5) * 0.5 : 0);
+
+        // Enhanced wave intensity per platform based on engagement, volume, activity, trending
+        const baseAmplitude = 30;
+        const combinedIntensity = Math.max(queueIntensity, volumeIntensity, engagementIntensity) + activeBoost + trendingBoost;
+        const queueAmplitude = baseAmplitude * (0.4 + combinedIntensity * 0.8);
+        const secondaryAmplitude = 18 * (0.5 + combinedIntensity * 0.7);
         
-        // Enhanced wave intensity based on queue size and autopilot volume
-        const baseAmplitude = 50;
-        const combinedIntensity = Math.max(queueIntensity, volumeIntensity);
-        const queueAmplitude = baseAmplitude * (0.5 + combinedIntensity * 0.5);
-        const secondaryAmplitude = 30 * (0.5 + combinedIntensity * 0.5);
-        
-        // Draw animated line with dynamic intensity and speed based on volume
-        const points = [];
-        // Dynamic animation speed: 1/day = slow (0.05), 3+/day = fast (0.15)
-        const baseSpeed = 0.05;
-        const volumeSpeed = Math.min(autopilotVolume * 0.03, 0.1);
-        const animationSpeed = baseSpeed + volumeSpeed;
+        // Draw animated line with dynamic intensity and speed per platform
+        const points: {x:number; y:number}[] = [];
+        const baseSpeed = 0.04;
+        const volumeSpeed = Math.min(autopilotVolume * 0.03, 0.12);
+        const activitySpeed = pData.active ? 0.03 : 0.0;
+        const spikeSpeed = recentSpike ? 0.05 : 0;
+        const animationSpeed = baseSpeed + volumeSpeed + activitySpeed + spikeSpeed;
         
         for (let i = 0; i <= 100; i++) {
           const x = (canvas.width / 100) * i;
@@ -750,8 +771,8 @@ export default function Dashboard() {
           points.push({x, y});
         }
         
-        // Add glow effect when autopilot is running
-        if (autopilotRunning || burstEffect > 0) {
+        // Add glow effect when platform is active/trending or recent spike
+        if (pData.active || pTrending || burstEffect > 0) {
           const glowIntensity = runningGlow + Math.abs(burstEffect);
           ctx.shadowColor = platform === 'youtube' ? '#ff0000' : '#e1306c';
           ctx.shadowBlur = 20 * glowIntensity;
@@ -761,7 +782,7 @@ export default function Dashboard() {
         
         // Platform-specific gradient with dynamic opacity based on volume
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-        const opacity = 0.8 + (combinedIntensity * 0.2) + runningGlow;
+        const opacity = 0.7 + (combinedIntensity * 0.25) + runningGlow;
         
         if (platform === 'youtube') {
           gradient.addColorStop(0, `rgba(255, 0, 0, ${opacity})`);
@@ -774,10 +795,12 @@ export default function Dashboard() {
         }
         
         ctx.strokeStyle = gradient;
-        // Dynamic line width: 1/day = thin (2px), 3+/day = thick (7px)
-        const baseLineWidth = 2;
-        const volumeLineWidth = Math.min(autopilotVolume * 1.5, 5);
-        ctx.lineWidth = baseLineWidth + volumeLineWidth + (combinedIntensity * 2);
+        // Dynamic line width per platform
+        const baseLineWidth = 2.5;
+        const volumeLineWidth = Math.min(autopilotVolume * 1.4, 5);
+        const activeWidth = pData.active ? 1.2 : 0;
+        const trendingWidth = pTrending ? 0.8 : 0;
+        ctx.lineWidth = baseLineWidth + volumeLineWidth + (combinedIntensity * 1.6) + activeWidth + trendingWidth;
         ctx.beginPath();
         
         points.forEach((point, index) => {
@@ -1165,6 +1188,11 @@ export default function Dashboard() {
             <HeartStatusCard />
           </div>
 
+          {/* 📝 Chart Footer Note */}
+          <div style={{ textAlign: 'center', marginTop: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+            These lines represent AutoPilot activity. Pink = Instagram, Red = YouTube. Lines rise with post volume and engagement. Glows and spikes indicate trending content or recent live posts.
+          </div>
+
           {/* 🚀 Manual Post Control Panel */}
           <div className="manual-post-panel" style={{
             marginTop: '20px',
@@ -1289,6 +1317,11 @@ export default function Dashboard() {
             
             {/* ❤️💗 Heart Indicators - Shows Instagram/YouTube Autopilot Status */}
             <HeartStatusCard />
+          </div>
+
+          {/* 📝 Chart Footer Note */}
+          <div style={{ textAlign: 'center', marginTop: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+            These lines represent AutoPilot activity. Pink = Instagram, Red = YouTube. Lines rise with post volume and engagement. Glows and spikes indicate trending content or recent live posts.
           </div>
 
           <div className="grid-layout">
