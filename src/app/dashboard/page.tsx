@@ -5,6 +5,7 @@ import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 import DashboardChart from '../../components/DashboardChart';
 import HeartStatusCard from '../../components/HeartStatusCard';
+import ActivityHeatmap from '../../components/ActivityHeatmap';
 import RecentAutoPilotPostsWrapper from '../../components/RecentAutoPilotPostsWrapper';
 import { API_ENDPOINTS } from '../../utils/api';
 // import NotificationSystem from '../../components/NotificationSystem'; // DISABLED
@@ -1184,8 +1185,8 @@ export default function Dashboard() {
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
             
-            {/* ❤️💗 Heart Indicators - Shows Instagram/YouTube Autopilot Status */}
-            <HeartStatusCard />
+            {/* Replaced hearts with activity heatmap preview */}
+            <ActivityHeatmap />
           </div>
 
           {/* 📝 Chart Footer Note */}
@@ -1315,8 +1316,8 @@ export default function Dashboard() {
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
             
-            {/* ❤️💗 Heart Indicators - Shows Instagram/YouTube Autopilot Status */}
-            <HeartStatusCard />
+            {/* Replaced hearts with activity heatmap preview */}
+            <ActivityHeatmap />
           </div>
 
           {/* 📝 Chart Footer Note */}
