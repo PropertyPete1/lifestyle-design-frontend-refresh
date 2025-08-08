@@ -1181,7 +1181,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid-layout" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+          <div className="grid-layout" style={{ width: 'min(1100px, 100vw - 32px)', margin: '0 auto' }}>
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
           </div>
@@ -1328,7 +1328,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid-layout" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)', marginTop: 0 }}>
+          <div className="grid-layout" style={{ width: 'min(1100px, 100vw - 32px)', margin: '0 auto', marginTop: 0 }}>
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
           </div>

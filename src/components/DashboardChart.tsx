@@ -291,8 +291,7 @@ const DashboardChart = () => {
         backgroundColor: '#121212',
         borderRadius: '12px',
         overflow: 'hidden',
-        padding: '0 16px', // inner padding
-        transform: 'translateX(24px)'
+        padding: '0 16px' // inner padding
       }}
     >
       {/* Inner content inset to avoid touching screen edges */}
