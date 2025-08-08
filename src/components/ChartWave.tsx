@@ -30,6 +30,7 @@ export default function ChartWave({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const phase = useRef(0);
   const animationId = useRef<number>();
+  const lastSize = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -37,9 +38,23 @@ export default function ChartWave({
     
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
-    canvas.width = width;
-    canvas.height = height;
+
+    const setCanvasSizeToContainer = () => {
+      const container = canvas.parentElement || canvas;
+      const displayWidth = container.clientWidth || width;
+      const displayHeight = container.clientHeight || height;
+
+      if (lastSize.current.w !== displayWidth || lastSize.current.h !== displayHeight) {
+        lastSize.current = { w: displayWidth, h: displayHeight };
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+      }
+    };
+
+    // Initial sizing and observe container for responsive width/height
+    setCanvasSizeToContainer();
+    const ro = new ResizeObserver(() => setCanvasSizeToContainer());
+    ro.observe(canvas.parentElement || canvas);
 
     const animate = () => {
       // Increment phase continuously for infinite motion
@@ -52,8 +67,9 @@ export default function ChartWave({
       ctx.beginPath();
 
       // Draw seamless infinite wave with vertical offset
+      const drawHeight = canvas.height || height;
       for (let x = 0; x < canvas.width; x++) {
-        const y = (height / 2) + offsetY + amplitude * Math.sin((x + phase.current) * frequency);
+        const y = (drawHeight / 2) + offsetY + amplitude * Math.sin((x + phase.current) * frequency);
         if (x === 0) {
           ctx.moveTo(x, y);
         } else {
@@ -90,8 +106,9 @@ export default function ChartWave({
       if (animationId.current) {
         cancelAnimationFrame(animationId.current);
       }
+      ro.disconnect();
     };
-  }, [amplitude, frequency, speed, height, width, color]);
+  }, [amplitude, frequency, speed, height, width, color, offsetY, isGlowing, thickness]);
 
   return (
     <canvas 

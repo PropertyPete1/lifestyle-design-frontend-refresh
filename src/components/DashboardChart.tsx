@@ -280,11 +280,13 @@ const DashboardChart = () => {
 
   return (
     <div 
-      className="chart-container" 
+      className="chart-container responsive-wave" 
       style={{ 
         position: 'relative', 
         width: '100%', 
-        height: '120px', 
+        height: '16vw', // scale height with width
+        minHeight: '120px',
+        maxHeight: '220px',
         marginTop: '20px',
         backgroundColor: '#121212',
         borderRadius: '6px',
@@ -297,8 +299,8 @@ const DashboardChart = () => {
         speed={instagramProps.speed} 
         amplitude={instagramProps.amplitude}
         frequency={0.015}
-        height={120}
-        width={800}
+        height={160}
+        width={0} // responsive; actual width from container
         offsetY={instagramProps.offsetY}
         isGlowing={instagramProps.isGlowing}
         thickness={instagramProps.isGlowing ? 4 : 2}
@@ -310,8 +312,8 @@ const DashboardChart = () => {
         speed={youtubeProps.speed} 
         amplitude={youtubeProps.amplitude}
         frequency={0.015}
-        height={120}
-        width={800}
+        height={160}
+        width={0}
         offsetY={youtubeProps.offsetY}
         isGlowing={youtubeProps.isGlowing}
         thickness={youtubeProps.isGlowing ? 4 : 2}
