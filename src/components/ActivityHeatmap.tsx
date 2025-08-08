@@ -112,10 +112,10 @@ export default function ActivityHeatmap() {
 
       <style jsx>{`
         .activity-tracker-container { position: relative; }
-        .activity-heatmap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
+        .activity-heatmap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); overflow-x: hidden; }
         .heatmap-container { display: flex; gap: 0; align-items: flex-start; background: rgba(15, 23, 42, 0.3); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(59, 130, 246, 0.2); max-width: 1100px; width: 100%; overflow-x: auto; margin: 0 auto; transform: translateX(24px); }
         .heatmap-labels { display: flex; flex-direction: column; gap: 0; }
-        .time-labels { display: flex; justify-content: space-between; width: 320px; margin-bottom: 1rem; margin-left: 80px; padding: 0 10px; min-width: 320px; }
+        .time-labels { display: flex; justify-content: space-between; width: 320px; margin-bottom: 1rem; margin-left: 80px; padding: 0 10px; min-width: 320px; box-sizing: border-box; }
         .time-labels span { font-size: 0.8rem; color: #60a5fa; font-weight: 600; letter-spacing: 1px; text-shadow: 0 0 10px rgba(96, 165, 250, 0.5); }
         .day-labels { display: flex; flex-direction: column; gap: 0; width: 70px; margin-right: 10px; flex: 0 0 70px; }
         .day-labels span { height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.9); letter-spacing: 1px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; margin-bottom: 2px; border: 1px solid rgba(59, 130, 246, 0.2); text-shadow: 0 0 8px rgba(96, 165, 250, 0.3); transition: all 0.3s ease; }
@@ -155,10 +155,21 @@ export default function ActivityHeatmap() {
           .time-labels { margin-left: 70px; }
         }
         @media (max-width: 640px) {
-          .activity-heatmap { padding: 1rem 0.5rem; }
-          .heatmap-container { transform: translateX(0); }
-          .time-labels { margin-left: 62px; width: 260px; }
-          .day-labels span { height: 34px; font-size: 0.75rem; }
+          .activity-heatmap { padding: 1rem 0.5rem; width: 100%; margin-left: 0; margin-right: 0; }
+          .heatmap-container { max-width: 100%; padding: 0.75rem; transform: translateX(0); }
+          .day-labels { width: 54px; flex: 0 0 54px; }
+          .time-labels { margin-left: 54px; width: calc(100% - 54px); min-width: 0; padding: 0 6px; }
+          .day-labels span { height: 30px; font-size: 0.7rem; }
+          .day-row { gap: 1px; }
+          .activity-cell { width: clamp(36px, 14vw, 52px); height: clamp(22px, 6.2vw, 30px); font-size: 0.62rem; }
+          .activity-cell::after { font-size: 0.58rem; }
+          .legend-scale { gap: 0.6rem; }
+          .activity-insights { gap: 0.8rem; }
+        }
+        @media (max-width: 380px) {
+          .time-labels { margin-left: 50px; }
+          .day-labels { width: 50px; flex-basis: 50px; }
+          .activity-cell { width: clamp(32px, 15vw, 46px); height: clamp(20px, 6vw, 28px); }
         }
       `}</style>
     </div>
