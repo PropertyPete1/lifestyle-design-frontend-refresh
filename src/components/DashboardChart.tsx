@@ -294,6 +294,8 @@ const DashboardChart = () => {
         padding: '0 16px' // add inner horizontal padding so waves don't touch edges
       }}
     >
+      {/* Inner content inset to avoid touching screen edges */}
+      <div style={{ position: 'absolute', left: 16, right: 16, top: 0, bottom: 0 }}>
       {/* Instagram Wave - Pink */}
       <ChartWave 
         color="rgba(255, 105, 180, 0.9)" 
@@ -335,6 +337,7 @@ const DashboardChart = () => {
           }}
         />
       )}
+      </div>
       
       <style jsx>{`
         @keyframes pulse {
