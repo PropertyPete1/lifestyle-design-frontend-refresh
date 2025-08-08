@@ -283,20 +283,16 @@ const DashboardChart = () => {
       className="chart-container responsive-wave" 
       style={{ 
         position: 'relative', 
-        width: '100vw',
-        marginLeft: 'calc(50% - 50vw)',
-        marginRight: 'calc(50% - 50vw)',
+        width: 'min(1100px, 100vw - 32px)',
+        margin: '20px auto 0',
         height: '16vw', // scale height with width
         minHeight: '140px',
         maxHeight: '260px',
-        marginTop: '20px',
         backgroundColor: '#121212',
-        borderRadius: 0,
+        borderRadius: '12px',
         overflow: 'hidden'
       }}
     >
-      {/* Horizontal nudge to align with heatmap grid area */}
-      <div style={{ position: 'absolute', inset: 0, transform: 'translateX(24px)' }}>
       {/* Instagram Wave - Pink */}
       <ChartWave 
         color="rgba(255, 105, 180, 0.9)" 
@@ -338,7 +334,6 @@ const DashboardChart = () => {
           }}
         />
       )}
-      </div>
       
       <style jsx>{`
         @keyframes pulse {
