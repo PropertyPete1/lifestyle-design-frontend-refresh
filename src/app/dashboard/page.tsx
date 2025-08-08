@@ -1189,36 +1189,6 @@ export default function Dashboard() {
           {/* Move heatmap below to give wave chart full horizontal space */}
           <div style={{ marginTop: '20px' }}>
             <ActivityHeatmap />
-
-            {/* Heatmap Explanation */}
-            <div style={{
-              marginTop: '10px',
-              color: 'rgba(255,255,255,0.75)',
-              fontSize: '12px',
-              lineHeight: 1.6,
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '8px',
-              padding: '12px'
-            }}>
-              <div style={{ fontWeight: 600, marginBottom: 6 }}>📊 What the Numbers Mean:</div>
-              <div>00 = Midnight (12 AM)<br/>06 = 6 AM<br/>12 = Noon (12 PM)<br/>18 = 6 PM<br/>24 = Midnight again</div>
-              <div style={{ marginTop: 6 }}>So "12-18" means 12 PM to 6 PM (afternoon)</div>
-              <div style={{ fontWeight: 600, marginTop: 10 }}>🎨 Color System:</div>
-              <div>
-                Dark Gray = Minimal activity<br/>
-                Blue = Low activity<br/>
-                Purple = Medium activity<br/>
-                Pink = High activity<br/>
-                Red = Very High activity<br/>
-                Bright Red = Peak activity (with pulsing animation)
-              </div>
-            </div>
-          </div>
-
-          {/* 📝 Chart Footer Note */}
-          <div style={{ textAlign: 'center', marginTop: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
-            These lines represent AutoPilot activity. Pink = Instagram, Red = YouTube. Lines rise with post volume and engagement. Glows and spikes indicate trending content or recent live posts.
           </div>
 
           {/* 🚀 Manual Post Control Panel */}
@@ -1347,36 +1317,6 @@ export default function Dashboard() {
           {/* Move heatmap below to give wave chart full horizontal space */}
           <div style={{ marginTop: '20px' }}>
             <ActivityHeatmap />
-
-            {/* Heatmap Explanation */}
-            <div style={{
-              marginTop: '10px',
-              color: 'rgba(255,255,255,0.75)',
-              fontSize: '12px',
-              lineHeight: 1.6,
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '8px',
-              padding: '12px'
-            }}>
-              <div style={{ fontWeight: 600, marginBottom: 6 }}>📊 What the Numbers Mean:</div>
-              <div>00 = Midnight (12 AM)<br/>06 = 6 AM<br/>12 = Noon (12 PM)<br/>18 = 6 PM<br/>24 = Midnight again</div>
-              <div style={{ marginTop: 6 }}>So "12-18" means 12 PM to 6 PM (afternoon)</div>
-              <div style={{ fontWeight: 600, marginTop: 10 }}>🎨 Color System:</div>
-              <div>
-                Dark Gray = Minimal activity<br/>
-                Blue = Low activity<br/>
-                Purple = Medium activity<br/>
-                Pink = High activity<br/>
-                Red = Very High activity<br/>
-                Bright Red = Peak activity (with pulsing animation)
-              </div>
-            </div>
-          </div>
-
-          {/* 📝 Chart Footer Note */}
-          <div style={{ textAlign: 'center', marginTop: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
-            These lines represent AutoPilot activity. Pink = Instagram, Red = YouTube. Lines rise with post volume and engagement. Glows and spikes indicate trending content or recent live posts.
           </div>
 
           <div className="grid-layout">
@@ -1386,37 +1326,40 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ✨ Luxury Chart Descriptions */}
-        <div className="chart-descriptions">
-          <div className="description-container">
-            <h3 className="description-title">Dashboard Analytics Overview</h3>
-            
-            <div className="description-grid">
-              <div className="description-card">
-                <div className="description-icon">🌊</div>
-                <h4>Dynamic Wave Chart</h4>
-                <p>Real-time engagement visualization with adaptive wave patterns. Wave amplitude reflects current engagement levels, while animation speed corresponds to posting volume. Glowing effects indicate new performance records.</p>
+        {/* ✨ Audience & Wave Explanations (Unified, per request) */}
+        <div className="chart-descriptions" style={{ marginTop: '20px' }}>
+          <div className="description-container" style={{ padding: 0 }}>
+            <div className="description-grid" style={{ display: 'grid', gap: '12px' }}>
+              <div className="description-card" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="description-icon">🔥</div>
+                <h4>Activity Level</h4>
+                <p>
+                  Minimal • Low • Medium • High • Very High • Peak
+                </p>
+                <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
+                  <strong>Peak Time:</strong> Thu–Fri 12–18h<br/>
+                  <strong>Optimal Posting:</strong> Weekdays 14:30
+                </div>
               </div>
-              
-              <div className="description-card">
+
+              <div className="description-card" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="description-icon">📊</div>
-                <h4>Platform Chart Lines</h4>
-                <p>Interactive status indicators for Instagram (pink) and YouTube (red) autopilot systems. Bar height represents daily post volume configuration, with smooth animations reflecting platform activity and engagement.</p>
+                <h4>What the Numbers Mean</h4>
+                <p>
+                  00 = Midnight (12 AM) • 06 = 6 AM • 12 = Noon (12 PM) • 18 = 6 PM • 24 = Midnight again.<br/>
+                  So "12-18" means 12 PM to 6 PM (afternoon).
+                </p>
+                <div style={{ marginTop: 6 }}>
+                  <strong>Color System:</strong> Dark Gray = Minimal • Blue = Low • Purple = Medium • Pink = High • Red = Very High • Bright Red = Peak (pulsing)
+                </div>
               </div>
-            </div>
-            
-            <div className="description-legend">
-              <div className="legend-item">
-                <span className="legend-color pink"></span>
-                <span>Instagram Autopilot</span>
-              </div>
-              <div className="legend-item">
-                <span className="legend-color red"></span>
-                <span>YouTube Autopilot</span>
-              </div>
-              <div className="legend-item">
-                <span className="legend-glow"></span>
-                <span>New Performance Record</span>
+
+              <div className="description-card" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="description-icon">🌊</div>
+                <h4>Wave Lines</h4>
+                <p>
+                  These lines represent AutoPilot activity. Pink = Instagram, Red = YouTube. Lines rise with post volume and engagement. Glows and spikes indicate trending content or recent live posts.
+                </p>
               </div>
             </div>
           </div>
