@@ -1184,8 +1184,10 @@ export default function Dashboard() {
           <div className="grid-layout">
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
-            
-            {/* Replaced hearts with activity heatmap preview */}
+          </div>
+
+          {/* Move heatmap below to give wave chart full horizontal space */}
+          <div style={{ marginTop: '20px' }}>
             <ActivityHeatmap />
 
             {/* Heatmap Explanation */}
@@ -1340,8 +1342,10 @@ export default function Dashboard() {
           <div className="grid-layout">
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
-            
-            {/* Replaced hearts with activity heatmap preview */}
+          </div>
+
+          {/* Move heatmap below to give wave chart full horizontal space */}
+          <div style={{ marginTop: '20px' }}>
             <ActivityHeatmap />
 
             {/* Heatmap Explanation */}
