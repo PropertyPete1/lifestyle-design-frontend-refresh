@@ -94,7 +94,6 @@ body {
     align-items: center;
     order: 1;
     flex-shrink: 0;
-    flex-wrap: wrap;
 }
 
 .platform-btn {
@@ -135,28 +134,7 @@ body {
     gap: 0.75rem;
     order: 3;
     flex-shrink: 0;
-    flex-wrap: wrap;
 }
-
-/* Ensure interactive button groups wrap cleanly on small screens */
-@media (max-width: 640px) {
-  .platform-btn,
-  .nav-button,
-  .action-button {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* Avoid overlap: keep menus and overlays above cards */
-.menu-container { z-index: 20; }
-.dropdown-menu { z-index: 30; }
-
-/* Improve default section spacing where custom layouts aren’t used */
-.dashboard-container > * + * { margin-top: 1.25rem; }
-
-/* Table wrappers should not collide with neighbors */
-.metric-card.overflow-hidden { padding: 1rem 0; }
 
 .menu-container {
     position: relative;
