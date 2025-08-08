@@ -88,80 +88,102 @@ export default function Dashboard() {
   //   setNotificationHandler(() => handler);
   // }, []);
   
-  // ✅ Real Analytics fetch function using unified endpoint
+  // ✅ Real Analytics fetch function prioritizing v2 endpoints, then unified
   const fetchAnalytics = useCallback(async () => {
     try {
       setAnalyticsLoading(true);
-      console.log('📊 [DASHBOARD] Fetching unified analytics...');
-      
-      // Fetch unified analytics from new endpoint
-      const response = await fetch(API_ENDPOINTS.analytics());
-      
-      if (!response.ok) {
-        throw new Error(`Analytics API error: ${response.status}`);
+      console.log('📊 [DASHBOARD] Fetching analytics (IG/YT endpoints first)...');
+
+      // Try v2 endpoints first for real metrics
+      const [igRes, ytRes] = await Promise.allSettled([
+        fetch(API_ENDPOINTS.instagramAnalytics()),
+        fetch(API_ENDPOINTS.youtubeAnalytics())
+      ]);
+
+      let igData: any = null;
+      let ytData: any = null;
+
+      if (igRes.status === 'fulfilled' && igRes.value.ok) {
+        const igJson = await igRes.value.json().catch(() => ({}));
+        igData = igJson.analytics || igJson || null;
       }
-      
-      const analyticsData = await response.json();
-      console.log('✅ [DASHBOARD] Analytics loaded:', analyticsData);
-      
-      // Format numbers for display
+      if (ytRes.status === 'fulfilled' && ytRes.value.ok) {
+        const ytJson = await ytRes.value.json().catch(() => ({}));
+        ytData = ytJson.analytics || ytJson || null;
+      }
+
+      // Fallback to unified endpoint if needed
+      let unified: any = null;
+      if (!igData && !ytData) {
+        try {
+          const response = await fetch(API_ENDPOINTS.analytics());
+          if (response.ok) unified = await response.json();
+        } catch {}
+      }
+
+      // Format helpers
       const formatNumber = (num: number) => {
         if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
         if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-        return num.toString();
+        return (Number.isFinite(num) ? num : 0).toString();
       };
+      const toPercentString = (val: number) => `${val.toFixed(1)}%`;
+
+      // Resolve Instagram metrics from v2 or unified
+      const ig = igData || unified?.instagram || {};
+      const igFollowers = ig.followers ?? ig.followers_count ?? 0;
+      let igEngagementVal = ig.engagementRate ?? ig.engagement ?? 0; // could be 0-1 or 0-100
+      igEngagementVal = typeof igEngagementVal === 'number' ? (igEngagementVal <= 1 ? igEngagementVal * 100 : igEngagementVal) : 0;
+      const igReach = ig.reach ?? ig.views ?? 0;
+
+      // Resolve YouTube metrics
+      const yt = ytData || unified?.youtube || {};
+      const ytSubscribers = yt.subscribers ?? yt.subscriberCount ?? 0;
+      const ytViews = yt.views ?? yt.viewCount ?? yt.reach ?? 0;
+      const ytWatch = yt.watchTimeHours ?? yt.watchTime ?? null;
       
-      const formatPercent = (num: number) => `${num.toFixed(1)}%`;
-      
-      // Update stats with REAL data from new analytics endpoint
+      // Update stats with resolved data
       setStats({
         instagram: {
-          followers: formatNumber(analyticsData.instagram?.followers || 0),
-          engagement: formatPercent((analyticsData.instagram?.engagementRate || 0) * 100),
-          reach: formatNumber(analyticsData.instagram?.reach || 0),
+          followers: formatNumber(igFollowers),
+          engagement: toPercentString(Number(igEngagementVal) || 0),
+          reach: formatNumber(igReach),
           autoPostsPerDay: `${status.maxPosts}/day`
         },
         youtube: {
-          subscribers: formatNumber(analyticsData.youtube?.subscribers || 0),
-          watchTime: 'N/A', // YouTube Analytics API scope needed
-          views: formatNumber(analyticsData.youtube?.reach || 0),
+          subscribers: formatNumber(ytSubscribers),
+          watchTime: ytWatch != null ? `${formatNumber(Number(ytWatch))}h` : 'N/A',
+          views: formatNumber(ytViews),
           autoUploadsPerWeek: '2/week'
         }
       });
       
-      // Update platform data for heart cards and charts with REAL data
+      // Update platform data for heart cards and charts
       setPlatformData({
         instagram: {
-          active: analyticsData.instagram?.autopilotEnabled || false,
+          active: (unified?.instagram?.autopilotEnabled) || status.autopilotEnabled || false,
           todayPosts: 0, // Enhanced with real data later
-          reach: analyticsData.instagram?.reach || 0,
-          engagement: analyticsData.instagram?.engagementRate || 0
+          reach: igReach || 0,
+          engagement: (typeof igEngagementVal === 'number' ? igEngagementVal / 100 : 0)
         },
         youtube: {
-          active: analyticsData.youtube?.autopilotEnabled || false,
+          active: (unified?.youtube?.autopilotEnabled) || status.autopilotEnabled || false,
           todayPosts: 0, // Enhanced with real data later
-          reach: analyticsData.youtube?.reach || 0,
+          reach: ytViews || 0,
           engagement: 0 // YouTube engagement calculated differently
         }
       });
 
-      // Update upcoming posts if available
-      if (analyticsData.upcomingPosts && analyticsData.upcomingPosts.length > 0) {
-        setQueuedPosts(analyticsData.upcomingPosts);
-        setQueueSize(analyticsData.upcomingPosts.length);
+      // If unified had extras (optional)
+      if (unified?.upcomingPosts?.length) {
+        setQueuedPosts(unified.upcomingPosts);
+        setQueueSize(unified.upcomingPosts.length);
       }
-
-      // Update autopilot status for UI
-      setAutopilotRunning(analyticsData.instagram?.autopilotEnabled || analyticsData.youtube?.autopilotEnabled || false);
-
-      // Update credentials debug with real status
-      if (analyticsData.credentials) {
-        setCredentialsDebug(analyticsData.credentials);
-      }
+      if (unified?.credentials) setCredentialsDebug(unified.credentials);
 
       console.log('✅ [DASHBOARD] Stats updated with real data');
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔑 [DEV] Credential Status:', analyticsData.credentials);
+        console.log('🔑 [DEV] Analytics debug:', { ig, yt, unified });
       }
 
     } catch (err) {
