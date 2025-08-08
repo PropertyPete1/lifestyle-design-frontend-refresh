@@ -12,7 +12,7 @@ const ZillowDashboard = () => {
   const [listingMode, setListingMode] = useState('both'); // rent, sale, both
   const [autoMessage, setAutoMessage] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   // Sample data
   const [scraperStats, setScraperStats] = useState({
@@ -665,8 +665,8 @@ const ZillowDashboard = () => {
     <div className="min-h-screen text-white">
       <div className="dashboard-container">
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full bg-white/5 backdrop-blur-xl border-r border-white/10 z-50 transition-all duration-300 ${
-        isMobile ? (sidebarCollapsed ? '-translate-x-full' : 'w-64') : (sidebarCollapsed ? 'w-16' : 'w-64')
+      <div className={`fixed left-0 top-0 h-full bg-gray-900/70 backdrop-blur-xl border-r border-white/10 z-50 transition-all duration-300 overflow-hidden ${
+        isMobile ? (sidebarCollapsed ? '-translate-x-full' : 'w-64') : (sidebarCollapsed ? 'w-0' : 'w-64')
       }`}>
         <div className="p-6">
           <div className="flex items-center mb-8">
@@ -705,16 +705,31 @@ const ZillowDashboard = () => {
           </nav>
         </div>
 
-        {/* Collapse Button */}
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -right-3 top-6 w-6 h-6 bg-gray-800 border border-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all duration-300"
-        >
-          <div className={`w-2 h-2 border-t border-r border-gray-400 transform transition-transform duration-300 ${
-            sidebarCollapsed ? 'rotate-45' : '-rotate-135'
-          }`} />
-        </button>
+        {/* Collapse Button (visible when expanded) */}
+        {!sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(true)}
+            className="absolute -right-3 top-6 w-6 h-6 bg-gray-800 border border-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all duration-300"
+          >
+            <div className="w-2 h-2 border-t border-r border-gray-400 -rotate-135" />
+          </button>
+        )}
       </div>
+
+      {/* Quick open button (desktop only, when collapsed) */}
+      {!isMobile && sidebarCollapsed && (
+        <button
+          onClick={() => setSidebarCollapsed(false)}
+          className="fixed left-3 top-24 z-40 w-8 h-8 bg-gray-800/80 border border-gray-700 rounded-full flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-700 transition-all duration-300 shadow-lg"
+          aria-label="Open navigation"
+        >
+          <div className="w-3.5 h-3.5 flex flex-col justify-between">
+            <div className="w-full h-0.5 bg-current" />
+            <div className="w-full h-0.5 bg-current" />
+            <div className="w-full h-0.5 bg-current" />
+          </div>
+        </button>
+      )}
 
       {/* Mobile Overlay */}
       {isMobile && !sidebarCollapsed && (
@@ -726,7 +741,7 @@ const ZillowDashboard = () => {
 
       {/* Main Content */}
       <div className={`transition-all duration-300 ${
-        isMobile ? 'ml-0' : (sidebarCollapsed ? 'ml-16' : 'ml-64')
+        isMobile ? 'ml-0' : (sidebarCollapsed ? 'ml-0' : 'ml-64')
       }`}>
         {/* Mobile Header */}
         {isMobile && (
