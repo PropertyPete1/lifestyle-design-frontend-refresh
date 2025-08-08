@@ -88,37 +88,35 @@ export default function Dashboard() {
   //   setNotificationHandler(() => handler);
   // }, []);
   
-  // ✅ Real Analytics fetch function prioritizing v2 endpoints, then unified
+  // ✅ Real Analytics fetch function prioritizing unified endpoint (clean backend), then v2
   const fetchAnalytics = useCallback(async () => {
     try {
       setAnalyticsLoading(true);
-      console.log('📊 [DASHBOARD] Fetching analytics (IG/YT endpoints first)...');
+      console.log('📊 [DASHBOARD] Fetching analytics (unified first)...');
 
-      // Try v2 endpoints first for real metrics
-      const [igRes, ytRes] = await Promise.allSettled([
-        fetch(API_ENDPOINTS.instagramAnalytics()),
-        fetch(API_ENDPOINTS.youtubeAnalytics())
-      ]);
+      // Try unified endpoint first (clean backend)
+      let unified: any = null;
+      try {
+        const response = await fetch(API_ENDPOINTS.analytics());
+        if (response.ok) unified = await response.json();
+      } catch {}
 
+      // If unified missing, try v2 endpoints for real metrics
       let igData: any = null;
       let ytData: any = null;
-
-      if (igRes.status === 'fulfilled' && igRes.value.ok) {
-        const igJson = await igRes.value.json().catch(() => ({}));
-        igData = igJson.analytics || igJson || null;
-      }
-      if (ytRes.status === 'fulfilled' && ytRes.value.ok) {
-        const ytJson = await ytRes.value.json().catch(() => ({}));
-        ytData = ytJson.analytics || ytJson || null;
-      }
-
-      // Fallback to unified endpoint if needed
-      let unified: any = null;
-      if (!igData && !ytData) {
-        try {
-          const response = await fetch(API_ENDPOINTS.analytics());
-          if (response.ok) unified = await response.json();
-        } catch {}
+      if (!unified) {
+        const [igRes, ytRes] = await Promise.allSettled([
+          fetch(API_ENDPOINTS.instagramAnalytics()),
+          fetch(API_ENDPOINTS.youtubeAnalytics())
+        ]);
+        if (igRes.status === 'fulfilled' && igRes.value.ok) {
+          const igJson = await igRes.value.json().catch(() => ({}));
+          igData = igJson.analytics || igJson || null;
+        }
+        if (ytRes.status === 'fulfilled' && ytRes.value.ok) {
+          const ytJson = await ytRes.value.json().catch(() => ({}));
+          ytData = ytJson.analytics || ytJson || null;
+        }
       }
 
       // Format helpers
@@ -130,14 +128,14 @@ export default function Dashboard() {
       const toPercentString = (val: number) => `${val.toFixed(1)}%`;
 
       // Resolve Instagram metrics from v2 or unified
-      const ig = igData || unified?.instagram || {};
+      const ig = unified?.instagram || igData || {};
       const igFollowers = ig.followers ?? ig.followers_count ?? 0;
       let igEngagementVal = ig.engagementRate ?? ig.engagement ?? 0; // could be 0-1 or 0-100
       igEngagementVal = typeof igEngagementVal === 'number' ? (igEngagementVal <= 1 ? igEngagementVal * 100 : igEngagementVal) : 0;
       const igReach = ig.reach ?? ig.views ?? 0;
 
       // Resolve YouTube metrics
-      const yt = ytData || unified?.youtube || {};
+      const yt = unified?.youtube || ytData || {};
       const ytSubscribers = yt.subscribers ?? yt.subscriberCount ?? 0;
       const ytViews = yt.views ?? yt.viewCount ?? yt.reach ?? 0;
       const ytWatch = yt.watchTimeHours ?? yt.watchTime ?? null;
