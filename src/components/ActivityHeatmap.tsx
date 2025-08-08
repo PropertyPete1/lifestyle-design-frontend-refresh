@@ -8,6 +8,7 @@ export default function ActivityHeatmap() {
   const [grid, setGrid] = useState<Array<Array<{ score: number; reach: number; level: string; count: number }>>>([])
   const [summary, setSummary] = useState<string>('')
   const [optimal, setOptimal] = useState<string[]>([])
+  const [bestToday, setBestToday] = useState<number | null>(null)
   const dayNames = useMemo(() => ['SUN','MON','TUE','WED','THU','FRI','SAT'], [])
 
   useEffect(() => {
@@ -17,6 +18,14 @@ export default function ActivityHeatmap() {
       if (res.ok) {
         const data = await res.json()
         setGrid(data.grid || [])
+        // Compute today's best hour
+        const today = new Date().getDay()
+        const row = (data.grid || [])[today] || []
+        let bestHour = 0; let bestReach = -1
+        for (let h = 0; h < row.length; h++) {
+          if ((row[h]?.reach || 0) > bestReach) { bestReach = row[h].reach; bestHour = h }
+        }
+        setBestToday(bestHour)
       }
     }
     const fetchSummary = async () => {
@@ -98,7 +107,11 @@ export default function ActivityHeatmap() {
                   const now = new Date();
                   const isCurrentRow = dIdx === now.getDay();
                   const isCurrentBlock = Math.floor(now.getHours() / 6) === blockIdx;
-                  const style: React.CSSProperties = (isCurrentRow && isCurrentBlock) ? { boxShadow: '0 0 0 2px rgba(148,163,184,0.6), 0 0 24px rgba(99,102,241,0.45)' } : {};
+                  const isBestTodayBlock = isCurrentRow && bestToday !== null && Math.floor(bestToday / 6) === blockIdx;
+                  const style: React.CSSProperties = {
+                    ...(isCurrentRow && isCurrentBlock ? { boxShadow: '0 0 0 2px rgba(148,163,184,0.6), 0 0 24px rgba(99,102,241,0.45)' } : {}),
+                    ...(isBestTodayBlock ? { outline: '2px solid rgba(34,197,94,0.55)', filter: 'brightness(1.08)' } : {})
+                  };
                   return (
                     <div className={`activity-cell ${level}`} style={style} data-hour={label} title={`Avg reach: ${avg}`} key={`d-${dIdx}-b-${blockIdx}`}></div>
                   )
