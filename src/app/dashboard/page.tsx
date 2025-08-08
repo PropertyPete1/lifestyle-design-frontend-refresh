@@ -892,16 +892,9 @@ export default function Dashboard() {
       
       // Handle menu actions
       switch (action) {
-        case 'upload':
-          // Navigate to upload page
-          window.location.href = '/upload';
-          showNotification('📤 Opening Upload page...');
-          break;
-
-        case 'manual':
-          // Navigate to manual post page
-          window.location.href = '/manual';
-          showNotification('✍️ Opening Manual Post page...');
+        case 'zillow':
+          window.location.href = '/zillow';
+          showNotification('🏡 Opening Zillow Assistant...');
           break;
         case 'autopilot-page':
           // Navigate to AutoPilot dashboard page
@@ -1098,6 +1091,10 @@ export default function Dashboard() {
                 <span className="menu-icon">⋮</span>
               </div>
               <div className={`dropdown-menu ${menuOpen ? 'show' : ''}`}>
+                <div className="menu-item" onClick={() => handleMenuClick('zillow')}>
+                  <div className="menu-item-icon">🏡</div>
+                  <span>Zillow Assistant</span>
+                </div>
                 <div className="menu-item" onClick={() => handleMenuClick('autopilot-page')}>
                   <div className="menu-item-icon">🚀</div>
                   <span>AutoPilot Dashboard</span>
