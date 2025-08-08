@@ -290,7 +290,8 @@ const DashboardChart = () => {
         maxHeight: '260px',
         backgroundColor: '#121212',
         borderRadius: '12px',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        padding: '0 16px' // add inner horizontal padding so waves don't touch edges
       }}
     >
       {/* Instagram Wave - Pink */}
