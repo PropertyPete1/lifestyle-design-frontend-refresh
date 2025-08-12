@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import VideoThumbnail from '@/components/VideoThumbnail';
+import HeatmapWeekly from '@/components/HeatmapWeekly';
 
 
 
@@ -54,6 +55,17 @@ export default function AutopilotPage() {
     platforms: ['instagram', 'youtube']
   });
 
+  // Header status
+  const [headerStatus, setHeaderStatus] = useState<{ active: boolean; igUsed: number; igLimit: number; ytUsed: number; ytLimit: number; nextRunISO: string; lastRefreshed: string }>({ active: false, igUsed: 0, igLimit: 0, ytUsed: 0, ytLimit: 0, nextRunISO: '', lastRefreshed: '' });
+
+  // Heatmap state
+  const [heatMatrix, setHeatMatrix] = useState<number[][]>(Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0)));
+  const [heatViewer, setHeatViewer] = useState<number[][] | null>(null);
+  const [heatPerf, setHeatPerf] = useState<number[][] | null>(null);
+  const [heatMeta, setHeatMeta] = useState<any>({ scale: { min: 0, max: 100 }, generatedAt: new Date().toISOString(), method: 'weighted', weights: { viewerActivity: 0.6, postPerformance: 0.4 } });
+  const [heatTopSlots, setHeatTopSlots] = useState<any[]>([]);
+  const [aiTip, setAiTip] = useState<string>('');
+
   // Helper functions for real-time data
   const getNextPostTime = () => {
     const now = new Date();
@@ -87,6 +99,9 @@ export default function AutopilotPage() {
   useEffect(() => {
     createParticles();
     loadAutopilotData();
+    fetchHeatmap();
+    fetchOptimalTimes();
+    refreshHeader();
     showNotification('🚀 Autopilot Dashboard loaded!', 'success');
 
     // Add keyboard shortcuts
@@ -109,6 +124,46 @@ export default function AutopilotPage() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [queueOpen]);
+
+  // Refresh optimal times every 15 minutes
+  useEffect(() => {
+    const id = setInterval(() => {
+      fetchOptimalTimes().catch(() => {});
+    }, 15 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  async function fetchHeatmap() {
+    try {
+      const res = await api.get('/heatmap/weekly');
+      if (res && res.matrix && res.meta) {
+        setHeatMatrix(res.matrix);
+        setHeatMeta(res.meta);
+        setHeatTopSlots(res.topSlots || []);
+        setHeatViewer(res.viewerMatrix || null);
+        setHeatPerf(res.performanceMatrix || null);
+      }
+    } catch (e) {
+      // silently ignore
+    }
+  }
+
+  async function fetchOptimalTimes() {
+    try {
+      const res = await api.get('/heatmap/optimal-times');
+      const slots = res?.slots || [];
+      const byPlat: Record<string, any[]> = slots.reduce((acc: any, s: any) => { (acc[s.platform] ||= []).push(s); return acc; }, {});
+      const fmt = (s: any) => s?.localLabel || new Date(s.iso).toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit', hour12: true }) + ' CT';
+      const igList = (byPlat['instagram'] || []).slice(0, 3).map(fmt).join(', ');
+      const ytList = (byPlat['youtube'] || []).slice(0, 3).map(fmt).join(', ');
+      const parts: string[] = [];
+      if (igList) parts.push(`IG: ${igList}`);
+      if (ytList) parts.push(`YT: ${ytList}`);
+      setAiTip(parts.join('  •  '));
+    } catch (_) {
+      setAiTip('');
+    }
+  }
 
   const loadAutopilotData = async () => {
     try {
@@ -142,8 +197,9 @@ export default function AutopilotPage() {
       // Load queue data from Phase 9 autopilot queue endpoint
       const queueRes = await api.get('/autopilot/queue');
       console.log('📋 [QUEUE DATA] Response:', queueRes);
-      if (queueRes.posts) {
-        setQueueData(queueRes.posts || []); // ✅ FIXED: Use posts array from backend
+      const items = queueRes.queue || queueRes.posts || [];
+      if (items) {
+        setQueueData(items || []);
       }
 
     } catch (error) {
@@ -153,6 +209,22 @@ export default function AutopilotPage() {
       setIsLoading(false);
     }
   };
+
+  async function refreshHeader() {
+    try {
+      const s = await api.get('/autopilot/status');
+      const sched = await api.get('/scheduler/status');
+      setHeaderStatus({
+        active: !!(s?.autopilotEnabled),
+        igUsed: sched?.instagram?.used ?? sched?.today?.instagram ?? 0,
+        igLimit: sched?.instagram?.limit ?? (settings.maxPosts || 5),
+        ytUsed: sched?.youtube?.used ?? sched?.today?.youtube ?? 0,
+        ytLimit: sched?.youtube?.limit ?? (settings.maxPosts || 5),
+        nextRunISO: sched?.nextRun || '',
+        lastRefreshed: new Date().toLocaleTimeString()
+      });
+    } catch {}
+  }
 
   const createParticles = () => {
     if (!particlesRef.current) return;
@@ -177,6 +249,26 @@ export default function AutopilotPage() {
       document.body.style.overflow = 'auto';
     }
   };
+
+  // Queue polling every 30s while drawer is open
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    const start = async () => {
+      setIsLoading(true);
+      await loadAutopilotData();
+      setIsLoading(false);
+      if (pollRef.current) clearInterval(pollRef.current as any);
+      pollRef.current = setInterval(async () => {
+        if (queueOpen) {
+          try { await loadAutopilotData(); } catch {}
+        }
+      }, 30000);
+    };
+    if (queueOpen) start();
+    return () => {
+      if (pollRef.current) { clearInterval(pollRef.current as any); pollRef.current = null; }
+    };
+  }, [queueOpen]);
 
   const toggleSwitch = (settingKey: string) => {
     setSettings(prev => ({
@@ -228,6 +320,8 @@ export default function AutopilotPage() {
 
   const runNow = async () => {
     try {
+      if (isLoading) return;
+      setIsLoading(true);
       showNotification('🚀 Starting comprehensive autopilot run...', 'success');
       
       // Call the CORRECT comprehensive autopilot endpoint
@@ -236,9 +330,13 @@ export default function AutopilotPage() {
       });
 
       if (res.success) {
-        const videosCount = res.videosProcessed || res.videosScheduled || 0;
-        showNotification(`✅ Autopilot completed! ${videosCount} videos queued`, 'success');
-        await loadAutopilotData(); // Reload data to show updated queue
+        const scheduled = res.scheduled ?? res.videosScheduled ?? 0;
+        const skipped = res.skipped ?? 0;
+        showNotification(`✅ Autopilot completed! Scheduled ${scheduled} • Skipped ${skipped}`, 'success');
+        await loadAutopilotData();
+        await fetchHeatmap();
+        await fetchOptimalTimes();
+        await refreshHeader();
       } else {
         showNotification(`❌ Autopilot failed: ${res.error || 'Unknown error'}`, 'error');
       }
@@ -246,23 +344,64 @@ export default function AutopilotPage() {
       console.error('❌ Autopilot failed:', error);
       showNotification('❌ Autopilot failed', 'error');
     }
+    setTimeout(() => setIsLoading(false), 800);
   };
 
   const postNow = async () => {
     try {
+      if (isLoading) return;
+      setIsLoading(true);
       showNotification('🚀 Posting all queued videos now...', 'success');
-      
-      const result = await api.post('/phase9/post-now', {});
+      const result = await api.post('/post-now', {});
       
       if (result.success) {
-        showNotification(`✅ Posted ${result.data.posted} videos successfully!`, 'success');
+        const posted = result.posted ?? result?.result?.posted ?? 0;
+        const skipped = result.skipped ?? 0;
+        showNotification(`✅ Posted ${posted} • Skipped ${skipped}`, 'success');
         await loadAutopilotData(); // Reload data to show updated statuses
+        await fetchHeatmap();
+        await fetchOptimalTimes();
+        await refreshHeader();
       } else {
         showNotification('❌ Posting failed', 'error');
       }
     } catch (error) {
       console.error('❌ Posting failed:', error);
       showNotification('❌ Posting failed', 'error');
+    }
+    setTimeout(() => setIsLoading(false), 800);
+  };
+
+  // Dev-only: Why Skipped? modal
+  const [whyOpen, setWhyOpen] = useState(false);
+  const [whyLoading, setWhyLoading] = useState(false);
+  const [whyError, setWhyError] = useState<string | null>(null);
+  const [whyResult, setWhyResult] = useState<any>(null);
+
+  const openWhy = async () => {
+    setWhyOpen(true);
+    setWhyLoading(true);
+    setWhyError(null);
+    setWhyResult(null);
+    try {
+      const item: any = queueData && queueData.length ? queueData[0] : null;
+      if (!item) {
+        setWhyError('No queued items to inspect. Run Autopilot first.');
+        return;
+      }
+      const payload = {
+        platform: (item.platform || 'instagram'),
+        videoUrl: (item.videoUrl || (item.s3Url || '')),
+        caption: (item.caption || ''),
+        audioKey: null,
+        durationSec: null
+      };
+      const res = await api.post('/debug/similarity-check', payload);
+      setWhyResult(res);
+    } catch (e: any) {
+      setWhyError(e?.message || 'Failed to run similarity check');
+    } finally {
+      setWhyLoading(false);
     }
   };
 
@@ -336,16 +475,34 @@ export default function AutopilotPage() {
         <div className="autopilot-header">
           <h1 className="autopilot-title">🚀 Autopilot Dashboard</h1>
           
-          <div className="status-display">
-            <div className={`status-indicator ${autopilotActive ? 'status-active' : 'status-paused'}`}></div>
-            <span>{autopilotActive ? '✅ Autopilot is Active' : '❌ Autopilot is Paused'}</span>
-          </div>
-          
-          <div className="status-details">
-            <span>Next post scheduled for <strong>{getNextPostTime()}</strong></span>
+          {/* Header bar with CT & counters */}
+          <div className="status-display" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className={`status-indicator ${headerStatus.active ? 'status-active' : 'status-paused'}`}></div>
+            <span>{headerStatus.active ? '✅ Autopilot Active' : '❌ Autopilot Paused'}</span>
             <span>•</span>
-            <span>Posts remaining today: <strong>{getRemainingPosts()}</strong></span>
+            <span>Today IG {headerStatus.igUsed}/{headerStatus.igLimit}</span>
+            <span>•</span>
+            <span>YT {headerStatus.ytUsed}/{headerStatus.ytLimit}</span>
+            <span>•</span>
+            <span>Next Run {headerStatus.nextRunISO ? new Date(headerStatus.nextRunISO).toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit', hour12: true }) + ' CT' : '—'}</span>
+            <span>•</span>
+            <span>Last refreshed {headerStatus.lastRefreshed}</span>
+            <button onClick={openWhy} style={{ marginLeft: 8, fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff', cursor: 'pointer' }}>Why Skipped?</button>
           </div>
+        </div>
+
+        {/* Weekly Heatmap */}
+        <div style={{ marginTop: '16px' }}>
+          <HeatmapWeekly matrix={heatMatrix} meta={heatMeta} topSlots={heatTopSlots} viewerMatrix={heatViewer} performanceMatrix={heatPerf} />
+        </div>
+        {aiTip && (
+          <div style={{ marginTop: 6, color: 'rgba(255,255,255,0.85)', fontSize: 12, fontStyle: 'italic' }}>
+            Best upcoming times → {aiTip}
+          </div>
+        )}
+        {/* AI tip line */}
+        <div style={{ marginTop: 6, color: 'rgba(255,255,255,0.8)', fontSize: 12, fontStyle: 'italic' }}>
+          Best times update every 15 minutes. All times shown are CT.
         </div>
 
         {/* Settings Panel */}
@@ -745,6 +902,43 @@ export default function AutopilotPage() {
         </div>
       </div>
 
+      {/* Why Skipped Modal */}
+      {whyOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setWhyOpen(false)}>
+          <div style={{ background: '#101010', border: '1px solid #333', borderRadius: 12, width: 'min(800px, 90vw)', maxHeight: '80vh', overflow: 'auto', color: '#fff', padding: 16 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <h3 style={{ margin: 0 }}>Why Skipped? (dev)</h3>
+              <button onClick={() => setWhyOpen(false)} style={{ fontSize: 18, background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer' }}>×</button>
+            </div>
+            {whyLoading && <div>Running similarity check...</div>}
+            {whyError && <div style={{ color: '#f87171' }}>{whyError}</div>}
+            {whyResult && (
+              <div>
+                <div style={{ marginBottom: 12, fontSize: 12, color: '#aaa' }}>
+                  Candidate — visualHash: {whyResult?.candidate?.visualHash || 'n/a'} • captionNorm: {(whyResult?.candidate?.captionNorm || '').slice(0, 60)}
+                </div>
+                <div>
+                  {(whyResult?.recentSample || []).map((r: any, idx: number) => (
+                    <div key={idx} style={{ borderTop: '1px solid #222', padding: '8px 0', fontSize: 13 }}>
+                      <div>Posted: {r.postedAt ? new Date(r.postedAt).toLocaleString('en-US', { timeZone: 'America/Chicago' }) + ' CT' : 'unknown'}</div>
+                      <div>visualHash: {r.visualHash || 'n/a'}</div>
+                      <div>captionNorm: {(r.captionNorm || '').slice(0, 80)}</div>
+                      <div>audioKey: {r.audioKey || 'n/a'}</div>
+                      <div>durationSec: {r.durationSec ?? 'n/a'}</div>
+                      <div style={{ marginTop: 4, color: '#9ca3af' }}>
+                        distances → visualHamming: {r?.distances?.visualHamming ?? 'n/a'} • captionSim: {typeof r?.distances?.captionSim === 'number' ? r.distances.captionSim.toFixed(2) : 'n/a'} • Δdur: {r?.distances?.durationDelta ?? 'n/a'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  Decision: {whyResult?.decision?.duplicate ? 'Duplicate' : 'Allowed'} {whyResult?.decision?.reason ? `(${whyResult.decision.reason})` : ''}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );

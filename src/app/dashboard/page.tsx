@@ -53,6 +53,10 @@ export default function Dashboard() {
     }
   });
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [connected, setConnected] = useState<{ instagram: boolean; youtube: boolean }>({ instagram: false, youtube: false });
+  const [timeseries, setTimeseries] = useState<{ labels: string[]; instagram: number[]; youtube: number[]; combined: number[] } | null>(null);
+  const [showSeries, setShowSeries] = useState<{ combined: boolean; instagram: boolean; youtube: boolean }>({ combined: true, instagram: false, youtube: false });
   const [recentActivity, setRecentActivity] = useState<Record<string, unknown>[]>([]);
   const [autopilotRunning, setAutopilotRunning] = useState(false);
   const [manualPostRunning, setManualPostRunning] = useState(false); // Separate state for manual post button
@@ -95,14 +99,18 @@ export default function Dashboard() {
   const fetchAnalytics = useCallback(async () => {
     try {
       setAnalyticsLoading(true);
+      setAnalyticsError(null);
       console.log('📊 [DASHBOARD] Fetching analytics (unified first)...');
 
-      // Try unified endpoint first (clean backend)
+      // Try unified endpoint first (TS backend)
       let unified: any = null;
       try {
         const response = await fetch(API_ENDPOINTS.analytics());
         if (response.ok) unified = await response.json();
-      } catch {}
+        else setAnalyticsError(`Analytics error ${response.status}`);
+      } catch (e: any) {
+        setAnalyticsError(e?.message || 'Failed to load analytics');
+      }
 
       // If unified missing, try v2 endpoints for real metrics
       let igData: any = null;
@@ -130,7 +138,7 @@ export default function Dashboard() {
       };
       const toPercentString = (val: number) => `${val.toFixed(1)}%`;
 
-      // Resolve Instagram metrics from v2 or unified
+      // Resolve Instagram metrics from unified or v2
       const ig = unified?.instagram || igData || {};
       const igFollowers = ig.followers ?? ig.followers_count ?? 0;
       let igEngagementVal = ig.engagementRate ?? ig.engagement ?? 0; // could be 0-1 or 0-100
@@ -158,6 +166,65 @@ export default function Dashboard() {
           autoUploadsPerWeek: '2/week'
         }
       });
+
+      // Connected flags
+      setConnected({ instagram: !!ig.connected, youtube: !!yt.connected });
+
+      // Timeseries for line chart (labels in CT, render as MMM d)
+      if (unified?.timeseries) {
+        const lbls: string[] = Array.isArray(unified.timeseries.labels) ? unified.timeseries.labels : [];
+        const formatLabel = (isoDateKey: string) => {
+          // Expect YYYY-MM-DD; render as MMM d with CT suffix in title
+          const [y, m, d] = isoDateKey.split('-').map((v: string) => parseInt(v, 10));
+          const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+          return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        };
+        const formatted = lbls.map(formatLabel);
+        const igS: number[] = Array.isArray(unified.timeseries.instagram) ? unified.timeseries.instagram : [];
+        const ytS: number[] = Array.isArray(unified.timeseries.youtube) ? unified.timeseries.youtube : [];
+        const combined: number[] = Array.isArray(unified.timeseries.combined) ? unified.timeseries.combined : [];
+        setTimeseries({ labels: formatted, instagram: igS, youtube: ytS, combined });
+      } else {
+        // Fallback: derive a 7-day series from activity feed
+        try {
+          const res = await fetch(API_ENDPOINTS.activityFeed(100));
+          if (res.ok) {
+            const data = await res.json();
+            const activities: any[] = data?.data || [];
+            const today = new Date();
+            const last7: string[] = [...Array(7)].map((_, i) => {
+              const d = new Date(today);
+              d.setDate(today.getDate() - i);
+              // Use local day key; visual only
+              return d.toISOString().split('T')[0];
+            }).reverse();
+            const counts: Record<string, { ig: number; yt: number }> = {};
+            last7.forEach(k => counts[k] = { ig: 0, yt: 0 });
+            activities.forEach((a: any) => {
+              const t = new Date(a.startTime || a.timestamp || a.createdAt || Date.now());
+              const key = t.toISOString().split('T')[0];
+              if (counts[key]) {
+                const p = (a.platform || '').toString().toLowerCase();
+                if (p.includes('instagram')) counts[key].ig += 1;
+                if (p.includes('youtube')) counts[key].yt += 1;
+              }
+            });
+            const labels = last7.map(k => {
+              const [y, m, d] = k.split('-').map(x => parseInt(x, 10));
+              const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+              return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+            const igArr = last7.map(k => counts[k].ig);
+            const ytArr = last7.map(k => counts[k].yt);
+            const combined = igArr.map((v, i) => v + ytArr[i]);
+            setTimeseries({ labels, instagram: igArr, youtube: ytArr, combined });
+          } else {
+            setTimeseries(null);
+          }
+        } catch {
+          setTimeseries(null);
+        }
+      }
       
       // Update platform data for heart cards and charts
       setPlatformData({
@@ -189,6 +256,7 @@ export default function Dashboard() {
 
     } catch (err) {
       console.error('❌ Failed to load analytics:', err);
+      setAnalyticsError((err as Error)?.message || 'Failed to load analytics');
       // Don't show notifications for analytics failures to avoid spam
     } finally {
       setAnalyticsLoading(false);
@@ -499,6 +567,11 @@ export default function Dashboard() {
             postTime: data.postTime || '14:00',
             repostDelay: data.repostDelay || 1
           })
+          // Update connected flags from settings as fallback (masked values still truthy)
+          setConnected({
+            instagram: !!data.instagramToken && !!data.igBusinessId,
+            youtube: !!(data.youtubeAccessToken || (data.youtubeClientId && data.youtubeClientSecret && data.youtubeRefreshToken))
+          })
 
           // ✅ Load credentials info for dashboard display
           setCredentialsDebug({
@@ -632,9 +705,9 @@ export default function Dashboard() {
           console.warn('⚠️ Enhanced activity failed, trying fallback...');
         }
 
-        // Use Phase 9 autopilot status for real-time data
+       // Use API for autopilot status for real-time data
         try {
-          const autopilotRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/autopilot/status`)
+          const autopilotRes = await fetch(API_ENDPOINTS.autopilotStatus())
           if (autopilotRes.ok) {
             const autopilotData = await autopilotRes.json()
             console.log('📊 Phase 9 Autopilot Status:', autopilotData)
@@ -1091,10 +1164,7 @@ export default function Dashboard() {
                 <span className="menu-icon">⋮</span>
               </div>
               <div className={`dropdown-menu ${menuOpen ? 'show' : ''}`}>
-                <div className="menu-item" onClick={() => handleMenuClick('zillow')}>
-                  <div className="menu-item-icon">🏡</div>
-                  <span>Zillow Assistant</span>
-                </div>
+                {/* Zillow Assistant entry removed per request */}
                 <div className="menu-item" onClick={() => handleMenuClick('autopilot-page')}>
                   <div className="menu-item-icon">🚀</div>
                   <span>AutoPilot Dashboard</span>
@@ -1121,15 +1191,25 @@ export default function Dashboard() {
 
         {/* Instagram Data */}
         <div id="instagram-data" className={`platform-data ${currentPlatform === 'instagram' ? 'active' : ''}`}>
+          {/* Loading / Error banner */}
+          {analyticsLoading && (
+            <div style={{ background: '#222', color: '#aaa', padding: '8px 12px', borderRadius: 8, marginBottom: 12 }}>Loading analytics…</div>
+          )}
+          {analyticsError && (
+            <div style={{ background: '#3a1d1d', color: '#fca5a5', padding: '8px 12px', borderRadius: 8, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Analytics error: {analyticsError}</span>
+              <button onClick={() => (window.location.href = '/settings')} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer' }}>Open Settings</button>
+            </div>
+          )}
           <div className="metrics-grid">
-            <div className="metric-card">
+            <div className="metric-card" title={connected.instagram ? 'Connected' : 'Connect in Settings'} style={{ opacity: connected.instagram ? 1 : 0.6 }}>
               <div className="metric-header">
                 <span className="metric-title">Followers</span>
                 <div className="metric-icon">👥</div>
               </div>
-              <div className="metric-value">{stats.instagram.followers}</div>
+              <div className="metric-value">{stats.instagram.followers}{connected.instagram ? '' : ' '}</div>
               <div className="metric-change change-positive">
-                ↗ +5.2% this week
+                {connected.instagram ? 'Connected' : 'Not Connected'}
               </div>
             </div>
 
@@ -1176,6 +1256,41 @@ export default function Dashboard() {
           <div className="grid-layout" style={{ width: 'min(1100px, 100vw - 32px)', margin: '0 auto' }}>
             {/* 🌊 Animated Wave Chart - Reactive to Autopilot Data */}
             <DashboardChart />
+            {/* Timeseries line chart */}
+            {timeseries && (
+              <div style={{ background: '#121212', borderRadius: 12, padding: 16, marginTop: 16 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                  <strong style={{ color: '#fff' }}>Last {timeseries.labels.length} days (CT)</strong>
+                  <label style={{ color: '#ddd', display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <input type="checkbox" checked={showSeries.combined} onChange={(e) => setShowSeries(s => ({ ...s, combined: e.target.checked }))} /> Combined
+                  </label>
+                  <label style={{ color: '#e1306c', display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <input type="checkbox" checked={showSeries.instagram} onChange={(e) => setShowSeries(s => ({ ...s, instagram: e.target.checked }))} /> IG
+                  </label>
+                  <label style={{ color: 'red', display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <input type="checkbox" checked={showSeries.youtube} onChange={(e) => setShowSeries(s => ({ ...s, youtube: e.target.checked }))} /> YT
+                  </label>
+                </div>
+                <Line
+                  data={{
+                    labels: timeseries.labels,
+                    datasets: [
+                      showSeries.combined ? { label: 'Combined', data: timeseries.combined, fill: false, borderColor: '#60a5fa', backgroundColor: '#60a5fa', tension: 0.3 } : undefined,
+                      showSeries.instagram ? { label: 'Instagram', data: timeseries.instagram, fill: false, borderColor: '#e1306c', backgroundColor: '#e1306c', tension: 0.3 } : undefined,
+                      showSeries.youtube ? { label: 'YouTube', data: timeseries.youtube, fill: false, borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.3 } : undefined,
+                    ].filter(Boolean) as any
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#eee' } } },
+                    scales: {
+                      x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+                      y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+                    }
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Move heatmap below to give wave chart full horizontal space */}
@@ -1269,14 +1384,14 @@ export default function Dashboard() {
         {/* YouTube Data */}
         <div id="youtube-data" className={`platform-data ${currentPlatform === 'youtube' ? 'active' : ''}`}>
           <div className="metrics-grid">
-            <div className="metric-card youtube">
+            <div className="metric-card youtube" title={connected.youtube ? 'Connected' : 'Connect in Settings'} style={{ opacity: connected.youtube ? 1 : 0.6 }}>
               <div className="metric-header">
                 <span className="metric-title">Subscribers</span>
                 <div className="metric-icon youtube">📺</div>
               </div>
-              <div className="metric-value youtube">{stats.youtube.subscribers}</div>
+              <div className="metric-value youtube">{stats.youtube.subscribers}{connected.youtube ? '' : ' '}</div>
               <div className="metric-change change-positive">
-                ↗ +3.8% this month
+                {connected.youtube ? 'Connected' : 'Not Connected'}
               </div>
             </div>
 
