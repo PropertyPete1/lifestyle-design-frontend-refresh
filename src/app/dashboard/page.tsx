@@ -27,7 +27,7 @@ const defaultStatus: DashboardSettings = {
   manual: true
 }
 
-export default function Dashboard() {
+function Dashboard() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => { setIsMounted(true); }, []);
   // Do not early-return before declaring hooks; render is gated below to keep hook order stable
@@ -1545,3 +1545,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+export default dynamic(() => Promise.resolve(Dashboard), { ssr: false });
