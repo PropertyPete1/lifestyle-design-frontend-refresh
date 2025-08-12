@@ -1137,7 +1137,7 @@ export default function Dashboard() {
 
   return (
     <div suppressHydrationWarning>
-      {!isMounted ? null : (
+      {!isMounted ? null : (<>
       <div className="floating-particles" ref={particlesRef}></div>
       <div className={`menu-overlay ${menuOpen ? 'show' : ''}`} onClick={() => setMenuOpen(false)}></div>
       
@@ -1541,7 +1541,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-      )}
+      </>)}
     </div>
   );
 }
