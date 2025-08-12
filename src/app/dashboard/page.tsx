@@ -30,10 +30,7 @@ const defaultStatus: DashboardSettings = {
 export default function Dashboard() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => { setIsMounted(true); }, []);
-
-  if (!isMounted) {
-    return <div suppressHydrationWarning />;
-  }
+  // Do not early-return before declaring hooks; render is gated below to keep hook order stable
   const [currentPlatform, setCurrentPlatform] = useState('instagram');
   const [menuOpen, setMenuOpen] = useState(false);
   const [status, setStatus] = useState<DashboardSettings>(defaultStatus);
@@ -1139,7 +1136,8 @@ export default function Dashboard() {
   // }, [notificationHandler]);
 
   return (
-    <div>
+    <div suppressHydrationWarning>
+      {!isMounted ? null : (
       <div className="floating-particles" ref={particlesRef}></div>
       <div className={`menu-overlay ${menuOpen ? 'show' : ''}`} onClick={() => setMenuOpen(false)}></div>
       
@@ -1543,6 +1541,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
