@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
-import DashboardChart from '../../components/DashboardChart';
+const DashboardChart = dynamic(() => import('../../components/DashboardChart'), { ssr: false });
 import HeartStatusCard from '../../components/HeartStatusCard';
-import ActivityHeatmap from '../../components/ActivityHeatmap';
+const ActivityHeatmap = dynamic(() => import('../../components/ActivityHeatmap'), { ssr: false });
 import RecentAutoPilotPostsWrapper from '../../components/RecentAutoPilotPostsWrapper';
 import { API_ENDPOINTS } from '../../utils/api';
 import NotificationSystem from '../../components/NotificationSystem';
@@ -27,6 +28,12 @@ const defaultStatus: DashboardSettings = {
 }
 
 export default function Dashboard() {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
+  if (!isMounted) {
+    return <div suppressHydrationWarning />;
+  }
   const [currentPlatform, setCurrentPlatform] = useState('instagram');
   const [menuOpen, setMenuOpen] = useState(false);
   const [status, setStatus] = useState<DashboardSettings>(defaultStatus);
