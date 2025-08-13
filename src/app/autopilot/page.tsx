@@ -172,12 +172,13 @@ export default function AutopilotPage() {
       // Load settings
       const settingsRes = await api.get('/settings');
       if (settingsRes) {
+        const likesThreshold = (settingsRes.minimumIGLikesToRepost ?? settingsRes.minViews ?? 0);
         setSettings({
           maxPosts: settingsRes.maxPosts || 3,
           postTime: settingsRes.postTime || '14:00',
           peakHours: settingsRes.peakHours !== false,
           repostDelay: settingsRes.repostDelay || 2,
-          minViews: settingsRes.minViews || 10000,
+          minViews: likesThreshold,
           visualSimilarityDays: settingsRes.visualSimilarityDays || 30,
           trendingAudio: settingsRes.trendingAudio !== false,
           aiCaptions: settingsRes.aiCaptions !== false,
@@ -302,6 +303,8 @@ export default function AutopilotPage() {
         postTime: settings.postTime,
         peakHours: settings.peakHours,
         repostDelay: settings.repostDelay,
+        // Backend uses likes; send both for compatibility
+        minimumIGLikesToRepost: settings.minViews,
         minViews: settings.minViews,
         visualSimilarityDays: settings.visualSimilarityDays,
         trendingAudio: settings.trendingAudio,
@@ -585,17 +588,17 @@ export default function AutopilotPage() {
               <div className="setting-description">Days to wait before reposting content</div>
             </div>
 
-            {/* Minimum Views to Repost */}
+            {/* Minimum Likes to Repost */}
             <div className="setting-item">
               <label className="setting-label">
-                👀 Minimum IG Views to Repost
+                👀 Minimum IG Likes to Repost
               </label>
               <input 
                 type="number" 
                 className="setting-input" 
-                value={settings.minViews} 
-                min="1000" 
-                step="1000"
+                value={settings.minViews}
+                min="0"
+                step="1"
                 onChange={(e) => {
                   const value = e.target.value;
                   // Allow empty input for typing
@@ -608,7 +611,7 @@ export default function AutopilotPage() {
                   }
                 }}
               />
-              <div className="setting-description">Minimum view count required for automatic reposting</div>
+              <div className="setting-description">Minimum likes required for automatic reposting</div>
             </div>
 
             {/* Visual Similarity Protection */}
