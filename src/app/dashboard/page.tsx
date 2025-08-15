@@ -20,9 +20,9 @@ type DashboardSettings = {
 
 const defaultStatus: DashboardSettings = {
   autopilotEnabled: false,
-  maxPosts: 3,
+  maxPosts: 0,
   postTime: '14:00',
-  repostDelay: 1,
+  repostDelay: 0,
   manual: true
 }
 
@@ -30,7 +30,9 @@ function Dashboard() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => { setIsMounted(true); }, []);
   // Do not early-return before declaring hooks; render is gated below to keep hook order stable
-  const [currentPlatform, setCurrentPlatform] = useState('instagram');
+  const [currentPlatform, setCurrentPlatform] = useState(() => {
+    try { return localStorage.getItem('dash.activePlatform') || 'instagram'; } catch { return 'instagram'; }
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [status, setStatus] = useState<DashboardSettings>(defaultStatus);
   
@@ -43,29 +45,44 @@ function Dashboard() {
   }, []);
   const [stats, setStats] = useState({
     instagram: {
-      followers: '24.8K',
-      engagement: '4.7%',
-      reach: '89.2K',
+      followers: '',
+      engagement: '',
+      reach: '',
       autoPostsPerDay: `${status.maxPosts}/day`
     },
     youtube: {
-      subscribers: 'N/A',
-      watchTime: 'N/A',
-      views: 'N/A',
-      autoUploadsPerWeek: '2/week'
+      subscribers: '',
+      watchTime: '',
+      views: '',
+      autoUploadsPerWeek: ''
     }
   });
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [connected, setConnected] = useState<{ instagram: boolean; youtube: boolean }>({ instagram: false, youtube: false });
   const [timeseries, setTimeseries] = useState<{ labels: string[]; instagram: number[]; youtube: number[]; combined: number[] } | null>(null);
-  const [showSeries, setShowSeries] = useState<{ combined: boolean; instagram: boolean; youtube: boolean }>({ combined: true, instagram: false, youtube: false });
+  const [showSeries, setShowSeries] = useState<{ combined: boolean; instagram: boolean; youtube: boolean }>(() => {
+    try {
+      return {
+        combined: (localStorage.getItem('dash.chart.showCombined') ?? 'true') === 'true',
+        instagram: (localStorage.getItem('dash.chart.showIG') ?? 'true') === 'true',
+        youtube: (localStorage.getItem('dash.chart.showYT') ?? 'true') === 'true',
+      };
+    } catch {
+      return { combined: true, instagram: true, youtube: true };
+    }
+  });
+  // persist toggles
+  useEffect(() => { try { localStorage.setItem('dash.chart.showCombined', String(showSeries.combined)); } catch {} }, [showSeries.combined]);
+  useEffect(() => { try { localStorage.setItem('dash.chart.showIG', String(showSeries.instagram)); } catch {} }, [showSeries.instagram]);
+  useEffect(() => { try { localStorage.setItem('dash.chart.showYT', String(showSeries.youtube)); } catch {} }, [showSeries.youtube]);
+
   const [recentActivity, setRecentActivity] = useState<Record<string, unknown>[]>([]);
   const [autopilotRunning, setAutopilotRunning] = useState(false);
   const [manualPostRunning, setManualPostRunning] = useState(false); // Separate state for manual post button
   const [autopilotStatus, setAutopilotStatus] = useState('idle'); // 'idle', 'running', 'success', 'error'
-  const [autopilotVolume, setAutopilotVolume] = useState(3); // posts per day
-  const [engagementScore, setEngagementScore] = useState(0.65); // 0-1 normalized
+  const [autopilotVolume, setAutopilotVolume] = useState(0); // posts per day
+  const [engagementScore, setEngagementScore] = useState(0); // 0-1 normalized
   const [newHighScore, setNewHighScore] = useState(false);
   const [lastPostSpike, setLastPostSpike] = useState<number | null>(null);
   const [queueSize, setQueueSize] = useState(0);
@@ -81,8 +98,167 @@ function Dashboard() {
   const [lastPostSpikeByPlatform, setLastPostSpikeByPlatform] = useState<{ instagram: number | null; youtube: number | null }>({ instagram: null, youtube: null });
   const [lastQueueUpdate, setLastQueueUpdate] = useState<number>(0);
   const [queueOpen, setQueueOpen] = useState(false);
-  const [showRecentList, setShowRecentList] = useState(false);
-  
+  const [showRecentList, setShowRecentList] = useState(() => {
+    try { return (localStorage.getItem('dash.showRecent') ?? 'true') === 'true'; } catch { return true; }
+  });
+  useEffect(() => { try { localStorage.setItem('dash.showRecent', String(showRecentList)); } catch {} }, [showRecentList]);
+
+  // helper to refresh by platform
+  const refreshAllForPlatform = useCallback(async (p: 'instagram' | 'youtube') => {
+    try {
+      console.log('[Dashboard] refreshAllForPlatform', p);
+      // settings, status, analytics, chart
+      const [settingsRes, statusRes, analyticsRes, chartRes] = await Promise.all([
+        fetch(API_ENDPOINTS.settings()),
+        fetch(API_ENDPOINTS.autopilotStatus()),
+        fetch(`${API_ENDPOINTS.analytics()}?platform=${p}`),
+        fetch(API_ENDPOINTS.chartStatus()),
+      ]);
+      if (settingsRes.ok) {
+        const s = await settingsRes.json();
+        setStatus({
+          autopilotEnabled: !!s.autopilotEnabled,
+          manual: s.manual !== false,
+          maxPosts: Number(s.maxPosts || 0),
+          postTime: s.postTime || '14:00',
+          repostDelay: Number(s.repostDelay || 0),
+        });
+        if (s.autopilotPlatforms) setPlatformSettings({ instagram: !!s.autopilotPlatforms.instagram, youtube: !!s.autopilotPlatforms.youtube });
+      }
+      if (statusRes.ok) {
+        const st = await statusRes.json();
+        setAutopilotRunning(!!st.autopilotEnabled);
+        if (typeof st.queueCount === 'number') setQueueSize(st.queueCount);
+      }
+      if (analyticsRes.ok) {
+        const an = await analyticsRes.json();
+        // normalize strings (never fake values)
+        if (p === 'instagram') {
+          setStats(prev => ({
+            ...prev,
+            instagram: {
+              followers: an?.instagram?.followers ? String(an.instagram.followers) : '',
+              engagement: an?.instagram?.engagementRate ? String(an.instagram.engagementRate) : (an?.instagram?.engagement ? String(an.instagram.engagement) : ''),
+              reach: an?.instagram?.reach ? String(an.instagram.reach) : '',
+              autoPostsPerDay: `${status.maxPosts}/day`
+            }
+          }));
+        } else {
+          setStats(prev => ({
+            ...prev,
+            youtube: {
+              subscribers: an?.youtube?.subscribers ? String(an.youtube.subscribers) : '',
+              watchTime: an?.youtube?.watchTimeHours ? `${an.youtube.watchTimeHours}h` : (an?.youtube?.watchTime ? String(an.youtube.watchTime) : ''),
+              views: an?.youtube?.views ? String(an.youtube.views) : '',
+              autoUploadsPerWeek: prev.youtube.autoUploadsPerWeek
+            }
+          }));
+        }
+      }
+      if (chartRes.ok) {
+        const c = await chartRes.json();
+        // keep using combined/ig/yt arrays if present; otherwise leave empty
+        if (Array.isArray(c?.timeseries?.labels)) {
+          // existing unified format path already handled below; skip
+        }
+      }
+      if (showRecentList) {
+        try {
+          const feedRes = await fetch(`${API_ENDPOINTS.activityFeed()}${`?platform=${p}&limit=20`}`);
+          if (feedRes.ok) {
+            const j = await feedRes.json();
+            setRecentActivity(j?.items || j?.data || []);
+          }
+        } catch {}
+      }
+      if (queueOpen) {
+        try {
+          const qRes = await fetch(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`);
+          if (qRes.ok) {
+            const qj = await qRes.json();
+            setQueuedPosts(qj?.items || qj?.queue || qj?.posts || []);
+          }
+        } catch {}
+      }
+    } catch (e) {
+      console.warn('[Dashboard] refresh error', e);
+    }
+  }, [queueOpen, showRecentList, status.maxPosts]);
+
+  // persist platform
+  useEffect(() => { try { localStorage.setItem('dash.activePlatform', currentPlatform); } catch {} }, [currentPlatform]);
+
+  // Switch platform handler
+  const switchPlatform = async (platform: string) => {
+    try {
+      console.log(`Switching to ${platform}`);
+      setCurrentPlatform(platform);
+      await refreshAllForPlatform(platform as 'instagram' | 'youtube');
+      try {
+        const settingsRes = await fetch(API_ENDPOINTS.settings());
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          const platformActive = settings.autopilotPlatforms?.[platform] !== false;
+          if (!platformActive) {
+            showNotification(`⚠️ ${platform.charAt(0).toUpperCase() + platform.slice(1)} is currently disabled in autopilot settings`, 'error');
+          } else {
+            showNotification(`📱 Switched to ${platform.charAt(0).toUpperCase() + platform.slice(1)}`);
+          }
+        } else {
+          showNotification(`📱 Switched to ${platform.charAt(0).toUpperCase() + platform.slice(1)}`);
+        }
+      } catch {
+        showNotification(`📱 Switched to ${platform.charAt(0).toUpperCase() + platform.slice(1)}`);
+      }
+    } catch (error) {
+      console.error('Error switching platform:', error);
+      showNotification('❌ Error switching platform', 'error');
+    }
+  };
+
+  // View Smart Queue open button handler replacement
+  const openQueueForCurrent = async () => {
+    try {
+      setQueueOpen(true);
+      const p = currentPlatform as 'instagram' | 'youtube';
+      const qRes = await fetch(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`);
+      if (qRes.ok) {
+        const qj = await qRes.json();
+        setQueuedPosts(qj?.items || qj?.queue || qj?.posts || []);
+      } else {
+        setQueuedPosts([]);
+      }
+    } catch { setQueuedPosts([]); }
+  };
+
+  // Manual Post Now handler (page button) with scoped platform
+  const handleManualPostNow = async () => {
+    if (manualPostRunning) return; // Prevent double clicks
+    setManualPostRunning(true);
+    try {
+      const response = await fetch(API_ENDPOINTS.postNow(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: currentPlatform, scope: 'next' })
+      });
+      const result = await response.json();
+      if (result.success) {
+        showNotification('✅ Posted successfully!', 'success');
+        await refreshAllForPlatform(currentPlatform as 'instagram' | 'youtube');
+      } else {
+        showNotification('❌ Post failed', 'error');
+      }
+    } catch (error) {
+      showNotification('❌ Connection error', 'error');
+    }
+    setTimeout(() => { setManualPostRunning(false); }, 2000);
+  };
+
+  // on mount: initial refresh honoring stored platform
+  useEffect(() => {
+    refreshAllForPlatform(currentPlatform as 'instagram' | 'youtube');
+  }, []);
+
   // ✅ NEW: Enhanced activity feed and chart state
   const [enhancedActivity, setEnhancedActivity] = useState<any[]>([]);
   const [queuedPosts, setQueuedPosts] = useState<any[]>([]);
@@ -921,36 +1097,6 @@ function Dashboard() {
     drawChart(youtubeCanvasRef.current, 'youtube');
   }, [autopilotRunning, queueSize, lastQueueUpdate]);
 
-  const switchPlatform = async (platform: string) => {
-    try {
-      console.log(`Switching to ${platform}`);
-      setCurrentPlatform(platform);
-      
-      // ✅ Check if this platform is active in autopilot settings
-      try {
-        const settingsRes = await fetch(API_ENDPOINTS.settings());
-        if (settingsRes.ok) {
-          const settings = await settingsRes.json();
-          const platformActive = settings.autopilotPlatforms?.[platform] !== false;
-          
-          if (!platformActive) {
-            showNotification(`⚠️ ${platform.charAt(0).toUpperCase() + platform.slice(1)} is currently disabled in autopilot settings`, 'error');
-          } else {
-            showNotification(`📱 Switched to ${platform.charAt(0).toUpperCase() + platform.slice(1)}`);
-          }
-        } else {
-          showNotification(`📱 Switched to ${platform.charAt(0).toUpperCase() + platform.slice(1)}`);
-        }
-      } catch (settingsError) {
-        console.warn('Could not check platform settings:', settingsError);
-        showNotification(`📱 Switched to ${platform.charAt(0).toUpperCase() + platform.slice(1)}`);
-      }
-    } catch (error) {
-      console.error('Error switching platform:', error);
-      showNotification('❌ Error switching platform', 'error');
-    }
-  };
-
   const toggleMenu = () => {
     try {
       setMenuOpen(!menuOpen);
@@ -1615,7 +1761,11 @@ function Dashboard() {
           {queuedPosts.length > 0 && (
             <div style={{ marginTop: 16, textAlign: 'center' }}>
               <button className="action-btn btn-run" onClick={async()=>{
-                try{ const r=await fetch(API_ENDPOINTS.postNow(),{method:'POST'}); const j=await r.json(); if(j?.success){ showNotification('✅ Posted queue successfully','success'); await fetchQueuedPosts(); } else { showNotification('❌ Post Now failed','error'); } }catch{ showNotification('❌ Connection error','error'); }
+                try {
+                  const r = await fetch(API_ENDPOINTS.postNow(), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ platform: currentPlatform, scope: 'all' }) });
+                  const j = await r.json();
+                  if(j?.success){ showNotification('✅ Posted queue successfully','success'); setQueueOpen(false); await refreshAllForPlatform(currentPlatform as 'instagram'|'youtube'); } else { showNotification('❌ Post Now failed','error'); }
+                } catch { showNotification('❌ Connection error','error'); }
               }}>🚀 Post Now</button>
               <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>Immediately posts all queued videos</div>
             </div>
