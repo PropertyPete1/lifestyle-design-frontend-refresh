@@ -44,7 +44,7 @@ export function useDashboardData(): DashboardData {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://lifestyle-design-backend-v2-clean.onrender.com';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://lifestyle-design-backend-refresh.onrender.com';
       
       // Fetch chart status for real-time platform data
       const chartRes = await fetch(`${API_BASE_URL}/api/chart/status`);

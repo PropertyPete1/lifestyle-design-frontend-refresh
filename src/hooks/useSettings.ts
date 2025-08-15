@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://lifestyle-design-backend-v2-clean.onrender.com';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://lifestyle-design-backend-refresh.onrender.com';
 
 export type Settings = {
   instagramToken: string;

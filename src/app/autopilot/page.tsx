@@ -8,7 +8,7 @@ import HeatmapWeekly from '@/components/HeatmapWeekly';
 
 
 // API configuration
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'https://lifestyle-design-backend-v2-clean.onrender.com'}/api`;
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'https://lifestyle-design-backend-refresh.onrender.com'}/api`;
 
 // API helper functions
 const api = {
