@@ -1195,39 +1195,7 @@ function Dashboard() {
     }
   };
 
-  // Manual Post Now handler
-  const handleManualPostNow = async () => {
-    if (manualPostRunning) return; // Prevent double clicks
-    
-    setManualPostRunning(true);
-    
-    try {
-      const response = await fetch(API_ENDPOINTS.postNow(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        showNotification('✅ Posted successfully!', 'success');
-        // Refresh data
-        fetchAnalytics();
-        fetchEnhancedActivity();
-        // Refresh queue preview
-        await fetchQueuedPosts();
-      } else {
-        showNotification('❌ Post failed', 'error');
-      }
-    } catch (error) {
-      showNotification('❌ Connection error', 'error');
-    }
-    
-    // Reset button after 2 seconds
-    setTimeout(() => {
-      setManualPostRunning(false);
-    }, 2000);
-  };
+  
 
   // Close menu when clicking outside
   useEffect(() => {
