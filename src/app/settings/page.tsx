@@ -68,6 +68,10 @@ export default function Settings() {
   const [s3Bucket, setS3Bucket] = useState('');
   const [s3Region, setS3Region] = useState('');
   
+  // Credentials status (masked flags from backend)
+  const [credStatus, setCredStatus] = useState<Record<string, string>>({});
+  const isConfigured = (key: string) => (credStatus?.[key]?.startsWith('✅'));
+  
   // Mode settings
   const [autopilotMode, setAutopilotMode] = useState(false);
   const [manualMode, setManualMode] = useState(true);
@@ -118,10 +122,13 @@ export default function Settings() {
         const settings = response;
         console.log('📋 Settings data:', settings);
         
-        // 🧪 TEST: Log individual field loading
-        console.log('🔧 Loading Instagram Token:', settings.instagramToken?.substring(0, 20) + '...');
-        console.log('🔧 Loading YouTube Token:', settings.youtubeAccessToken);
-        console.log('🔧 Loading YouTube Channel:', settings.youtubeChannelId);
+        // Save masked credential flags for UI checks
+        if (settings.credentials) setCredStatus(settings.credentials);
+        
+        // 🧪 TEST: Log individual field loading (masked)
+        console.log('🔧 Instagram Token status:', settings.credentials?.['Instagram Token']);
+        console.log('🔧 YouTube Access Token status:', settings.credentials?.['YouTube Access Token']);
+        console.log('🔧 YouTube Channel:', settings.youtubeChannelId);
         
         // 🛡️ Load initial values OR preserve user typing - FIXED FIELD MAPPINGS
         if (!settingsLoaded || !instagramToken) setInstagramToken(settings.instagramToken || '');
@@ -422,17 +429,17 @@ export default function Settings() {
           </div>
           
           <div className="form-group">
-            <label className="form-label">📸 Instagram Access Token {instagramToken ? '✅' : '❌'}</label>
+            <label className="form-label">📸 Instagram Access Token {isConfigured('Instagram Token') ? '✅' : '❌'}</label>
             <input 
               type="text" 
               className="form-input" 
               placeholder="Enter Instagram access token..." 
               value={instagramToken}
               onChange={(e) => setInstagramToken(e.target.value)}
-              style={{fontFamily: 'monospace', fontSize: '0.9rem', backgroundColor: instagramToken ? '#1a4d1a' : 'transparent'}}
+              style={{fontFamily: 'monospace', fontSize: '0.9rem', backgroundColor: isConfigured('Instagram Token') ? '#1a4d1a' : 'transparent'}}
             />
             <small style={{color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem'}}>
-              Enables posting and scraping IG data {instagramToken ? `(${instagramToken.length} chars loaded)` : '(empty)'}
+              Enables posting and scraping IG data {isConfigured('Instagram Token') ? `(${instagramToken.length} chars loaded)` : '(empty)'}
             </small>
           </div>
 
@@ -461,17 +468,17 @@ export default function Settings() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">📺 YouTube Token {youtubeToken ? '✅' : '❌'}</label>
+            <label className="form-label">📺 YouTube Token {isConfigured('YouTube Access Token') ? '✅' : '❌'}</label>
             <input 
               type="text" 
               className="form-input" 
               placeholder="Enter YouTube token..." 
               value={youtubeToken}
               onChange={(e) => setYoutubeToken(e.target.value)}
-              style={{fontFamily: 'monospace', fontSize: '0.9rem', backgroundColor: youtubeToken ? '#1a4d1a' : 'transparent'}}
+              style={{fontFamily: 'monospace', fontSize: '0.9rem', backgroundColor: isConfigured('YouTube Access Token') ? '#1a4d1a' : 'transparent'}}
             />
             <small style={{color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem'}}>
-              Enables posting via YouTube Data API {youtubeToken ? `(${youtubeToken.length} chars)` : '(empty)'}
+              Enables posting via YouTube Data API {isConfigured('YouTube Access Token') ? `(${youtubeToken.length} chars)` : '(empty)'}
             </small>
           </div>
 
@@ -514,7 +521,7 @@ export default function Settings() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">📺 YouTube Client Secret</label>
+            <label className="form-label">📺 YouTube Client Secret {isConfigured('YouTube Client Secret') ? '✅' : '❌'}</label>
             <input 
               type="password" 
               className="form-input" 
@@ -602,7 +609,7 @@ export default function Settings() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">🪣 S3 Secret Access Key <span style={{color: '#ff4458'}}>(Optional)</span></label>
+            <label className="form-label">🪣 S3 Secret Access Key <span style={{color: '#ff4458'}}>(Optional)</span> {isConfigured('S3 Secret Key') ? '✅' : ''}</label>
             <input 
               type="password" 
               className="form-input" 
