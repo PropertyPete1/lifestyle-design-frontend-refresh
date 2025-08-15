@@ -1189,7 +1189,6 @@ function Dashboard() {
         }
         e.currentTarget.classList.add('active');
       }
-      
       showNotification(`📊 Chart period changed to ${e.currentTarget.textContent}`);
     } catch (error) {
       console.error('Error handling control button click:', error);
