@@ -133,10 +133,10 @@ function Dashboard() {
       const signal = controller.signal;
       // settings, status, analytics, chart
       const [settingsRes, statusRes, analyticsRes, chartRes] = await Promise.all([
-        fetchWithRetry(API_ENDPOINTS.settings(), { signal, headers: { 'x-no-cache': '1' } }),
-        fetchWithRetry(API_ENDPOINTS.autopilotStatus(), { signal, headers: { 'x-no-cache': '1' } }),
-        fetchWithRetry(`${API_ENDPOINTS.analytics()}?platform=${p}`, { signal, headers: { 'x-no-cache': '1' } }),
-        fetchWithRetry(API_ENDPOINTS.chartStatus(), { signal, headers: { 'x-no-cache': '1' } }),
+        fetchWithRetry(API_ENDPOINTS.settings(), { signal }),
+        fetchWithRetry(API_ENDPOINTS.autopilotStatus(), { signal }),
+        fetchWithRetry(`${API_ENDPOINTS.analytics()}?platform=${p}`, { signal }),
+        fetchWithRetry(API_ENDPOINTS.chartStatus(), { signal }),
       ]);
       if (settingsRes.ok) {
         const s = await settingsRes.json();
@@ -201,7 +201,7 @@ function Dashboard() {
       }
       if (queueOpen) {
         try {
-          const qRes = await fetchWithRetry(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`, { signal, headers: { 'x-no-cache': '1' } });
+          const qRes = await fetchWithRetry(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`, { signal });
           if (qRes.ok) {
             const qj = await qRes.json();
             setQueuedPosts(qj?.items || qj?.queue || qj?.posts || []);
@@ -250,7 +250,7 @@ function Dashboard() {
     try {
       setQueueOpen(true);
       const p = currentPlatform as 'instagram' | 'youtube';
-      const qRes = await fetchWithRetry(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`, { headers: { 'x-no-cache': '1' } });
+      const qRes = await fetchWithRetry(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`);
       if (qRes.ok) {
         const qj = await qRes.json();
         setQueuedPosts(qj?.items || qj?.queue || qj?.posts || []);
@@ -1149,7 +1149,7 @@ function Dashboard() {
         queueInterval = setInterval(async () => {
           try {
             const p = currentPlatform as 'instagram' | 'youtube';
-            const qRes = await fetchWithRetry(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`, { headers: { 'x-no-cache': '1' } });
+            const qRes = await fetchWithRetry(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`);
             if (qRes.ok) {
               const qj = await qRes.json();
               setQueuedPosts(qj?.items || qj?.queue || qj?.posts || []);
