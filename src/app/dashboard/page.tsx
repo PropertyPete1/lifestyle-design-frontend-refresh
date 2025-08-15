@@ -103,16 +103,40 @@ function Dashboard() {
   });
   useEffect(() => { try { localStorage.setItem('dash.showRecent', String(showRecentList)); } catch {} }, [showRecentList]);
 
+  // Abort + retry helpers for robust fetching
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const beginNewRequestCycle = () => {
+    try { abortControllerRef.current?.abort(); } catch {}
+    abortControllerRef.current = new AbortController();
+    return abortControllerRef.current;
+  };
+  const fetchWithRetry = async (url: string, options: RequestInit = {}, retries = 2, backoffMs = 500): Promise<Response> => {
+    const opts: RequestInit = { cache: 'no-store', ...options };
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const res = await fetch(url, opts);
+        if (res.ok || res.status === 304) return res;
+        if (attempt === retries) return res;
+      } catch (e) {
+        if (attempt === retries) throw e as Error;
+      }
+      await new Promise(r => setTimeout(r, backoffMs));
+    }
+    throw new Error('fetchWithRetry exhausted');
+  };
+
   // helper to refresh by platform
   const refreshAllForPlatform = useCallback(async (p: 'instagram' | 'youtube') => {
     try {
       console.log('[Dashboard] refreshAllForPlatform', p);
+      const controller = beginNewRequestCycle();
+      const signal = controller.signal;
       // settings, status, analytics, chart
       const [settingsRes, statusRes, analyticsRes, chartRes] = await Promise.all([
-        fetch(API_ENDPOINTS.settings()),
-        fetch(API_ENDPOINTS.autopilotStatus()),
-        fetch(`${API_ENDPOINTS.analytics()}?platform=${p}`),
-        fetch(API_ENDPOINTS.chartStatus()),
+        fetchWithRetry(API_ENDPOINTS.settings(), { signal, headers: { 'x-no-cache': '1' } }),
+        fetchWithRetry(API_ENDPOINTS.autopilotStatus(), { signal, headers: { 'x-no-cache': '1' } }),
+        fetchWithRetry(`${API_ENDPOINTS.analytics()}?platform=${p}`, { signal, headers: { 'x-no-cache': '1' } }),
+        fetchWithRetry(API_ENDPOINTS.chartStatus(), { signal, headers: { 'x-no-cache': '1' } }),
       ]);
       if (settingsRes.ok) {
         const s = await settingsRes.json();
@@ -132,14 +156,16 @@ function Dashboard() {
       }
       if (analyticsRes.ok) {
         const an = await analyticsRes.json();
-        // normalize strings (never fake values)
+        // Preserve prior values to avoid blanking UI if fields are temporarily missing
         if (p === 'instagram') {
           setStats(prev => ({
             ...prev,
             instagram: {
-              followers: an?.instagram?.followers ? String(an.instagram.followers) : '',
-              engagement: an?.instagram?.engagementRate ? String(an.instagram.engagementRate) : (an?.instagram?.engagement ? String(an.instagram.engagement) : ''),
-              reach: an?.instagram?.reach ? String(an.instagram.reach) : '',
+              followers: an?.instagram?.followers != null ? String(an.instagram.followers) : prev.instagram.followers,
+              engagement: an?.instagram?.engagementRate != null
+                ? String(an.instagram.engagementRate)
+                : (an?.instagram?.engagement != null ? String(an.instagram.engagement) : prev.instagram.engagement),
+              reach: an?.instagram?.reach != null ? String(an.instagram.reach) : prev.instagram.reach,
               autoPostsPerDay: `${status.maxPosts}/day`
             }
           }));
@@ -147,9 +173,11 @@ function Dashboard() {
           setStats(prev => ({
             ...prev,
             youtube: {
-              subscribers: an?.youtube?.subscribers ? String(an.youtube.subscribers) : '',
-              watchTime: an?.youtube?.watchTimeHours ? `${an.youtube.watchTimeHours}h` : (an?.youtube?.watchTime ? String(an.youtube.watchTime) : ''),
-              views: an?.youtube?.views ? String(an.youtube.views) : '',
+              subscribers: an?.youtube?.subscribers != null ? String(an.youtube.subscribers) : prev.youtube.subscribers,
+              watchTime: an?.youtube?.watchTimeHours != null
+                ? `${an.youtube.watchTimeHours}h`
+                : (an?.youtube?.watchTime != null ? String(an.youtube.watchTime) : prev.youtube.watchTime),
+              views: an?.youtube?.views != null ? String(an.youtube.views) : prev.youtube.views,
               autoUploadsPerWeek: prev.youtube.autoUploadsPerWeek
             }
           }));
@@ -164,7 +192,7 @@ function Dashboard() {
       }
       if (showRecentList) {
         try {
-          const feedRes = await fetch(`${API_ENDPOINTS.activityFeed()}${`?platform=${p}&limit=20`}`);
+          const feedRes = await fetchWithRetry(`${API_ENDPOINTS.activityFeed()}${`?platform=${p}&limit=20`}`, { signal });
           if (feedRes.ok) {
             const j = await feedRes.json();
             setRecentActivity(j?.items || j?.data || []);
@@ -173,7 +201,7 @@ function Dashboard() {
       }
       if (queueOpen) {
         try {
-          const qRes = await fetch(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`);
+          const qRes = await fetchWithRetry(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`, { signal, headers: { 'x-no-cache': '1' } });
           if (qRes.ok) {
             const qj = await qRes.json();
             setQueuedPosts(qj?.items || qj?.queue || qj?.posts || []);
@@ -182,6 +210,7 @@ function Dashboard() {
       }
     } catch (e) {
       console.warn('[Dashboard] refresh error', e);
+      try { showNotification("Couldn't refresh right now", 'info'); } catch {}
     }
   }, [queueOpen, showRecentList, status.maxPosts]);
 
@@ -221,7 +250,7 @@ function Dashboard() {
     try {
       setQueueOpen(true);
       const p = currentPlatform as 'instagram' | 'youtube';
-      const qRes = await fetch(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`);
+      const qRes = await fetchWithRetry(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`, { headers: { 'x-no-cache': '1' } });
       if (qRes.ok) {
         const qj = await qRes.json();
         setQueuedPosts(qj?.items || qj?.queue || qj?.posts || []);
@@ -257,6 +286,23 @@ function Dashboard() {
   // on mount: initial refresh honoring stored platform
   useEffect(() => {
     refreshAllForPlatform(currentPlatform as 'instagram' | 'youtube');
+    // Visibility-aware polling every 60s
+    let pollingId: any = null;
+    const startPolling = () => {
+      if (pollingId) return;
+      pollingId = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          refreshAllForPlatform(currentPlatform as 'instagram' | 'youtube');
+        }
+      }, 60000);
+    };
+    const stopPolling = () => { if (pollingId) { clearInterval(pollingId); pollingId = null; } };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') startPolling(); else stopPolling();
+    };
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => { stopPolling(); document.removeEventListener('visibilitychange', handleVisibility); abortControllerRef.current?.abort(); };
   }, []);
 
   // ✅ NEW: Enhanced activity feed and chart state
@@ -1095,6 +1141,26 @@ function Dashboard() {
 
     drawChart(instagramCanvasRef.current, 'instagram');
     drawChart(youtubeCanvasRef.current, 'youtube');
+
+    // Queue drawer polling every 30s when open
+    let queueInterval: any = null;
+    const manageQueuePolling = () => {
+      if (queueOpen && !queueInterval) {
+        queueInterval = setInterval(async () => {
+          try {
+            const p = currentPlatform as 'instagram' | 'youtube';
+            const qRes = await fetchWithRetry(`${API_ENDPOINTS.autopilotQueue()}${`?platform=${p}&limit=50`}`, { headers: { 'x-no-cache': '1' } });
+            if (qRes.ok) {
+              const qj = await qRes.json();
+              setQueuedPosts(qj?.items || qj?.queue || qj?.posts || []);
+            }
+          } catch {}
+        }, 30000);
+      }
+      if (!queueOpen && queueInterval) { clearInterval(queueInterval); queueInterval = null; }
+    };
+    manageQueuePolling();
+    return () => { if (queueInterval) clearInterval(queueInterval); };
   }, [autopilotRunning, queueSize, lastQueueUpdate]);
 
   const toggleMenu = () => {
@@ -1324,7 +1390,7 @@ function Dashboard() {
                 <span className="metric-title">Followers</span>
                 <div className="metric-icon">👥</div>
               </div>
-              <div className="metric-value">{stats.instagram.followers}{connected.instagram ? '' : ' '}</div>
+              <div className="metric-value">{stats.instagram.followers ? stats.instagram.followers : '—'}</div>
               <div className="metric-change change-positive">
                 {connected.instagram ? 'Connected' : 'Not Connected'}
               </div>
@@ -1530,7 +1596,7 @@ function Dashboard() {
                 <span className="metric-title">Subscribers</span>
                 <div className="metric-icon youtube">📺</div>
               </div>
-              <div className="metric-value youtube">{stats.youtube.subscribers}{connected.youtube ? '' : ' '}</div>
+              <div className="metric-value youtube">{stats.youtube.subscribers ? stats.youtube.subscribers : '—'}</div>
               <div className="metric-change change-positive">
                 {connected.youtube ? 'Connected' : 'Not Connected'}
               </div>
