@@ -92,6 +92,7 @@ export default function Settings() {
   
   // Phase 9 specific settings
   const [minViews, setMinViews] = useState('10000');
+  const [visualSimilarityRecentPosts, setVisualSimilarityRecentPosts] = useState('30');
   const [trendingAudio, setTrendingAudio] = useState(true);
   const [aiCaptions, setAiCaptions] = useState(true);
   const [dropboxSave, setDropboxSave] = useState(false);
@@ -170,7 +171,8 @@ export default function Settings() {
         setFileRetention(settings.fileRetention?.toString() || '7');
         
         // Phase 9 specific settings
-        setMinViews(settings.minViews?.toString() || '10000');
+        setMinViews(settings.minimumIGLikesToRepost?.toString() || settings.minViews?.toString() || '10000');
+        setVisualSimilarityRecentPosts((settings.visualSimilarityRecentPosts ?? settings.visualSimilarityDays ?? 30).toString());
         setTrendingAudio(settings.trendingAudio !== false);
         setAiCaptions(settings.aiCaptions !== false);
         setDropboxSave(settings.dropboxSave || false);
@@ -269,7 +271,9 @@ export default function Settings() {
       data.crossPost = crossPost;
       data.dropboxFolder = dropboxFolder;
       data.fileRetention = parseInt(fileRetention);
+      data.minimumIGLikesToRepost = parseInt(minViews);
       data.minViews = parseInt(minViews);
+      data.visualSimilarityRecentPosts = parseInt(visualSimilarityRecentPosts);
       data.trendingAudio = trendingAudio;
       data.aiCaptions = aiCaptions;
       data.dropboxSave = dropboxSave;
@@ -690,7 +694,7 @@ export default function Settings() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Preferred Post Time</label>
+            <label className="form-label">Preferred Post Time (CT)</label>
             <input 
               type="time" 
               className="form-input" 
@@ -745,6 +749,25 @@ export default function Settings() {
                 }
               }}
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Visual Similarity Protection (Recent Posts)</label>
+            <input 
+              type="number" 
+              className="form-input" 
+              placeholder="30" 
+              min="1" 
+              max="200"
+              value={visualSimilarityRecentPosts}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '' || (!isNaN(parseInt(value)) && parseInt(value) >= 1 && parseInt(value) <= 200)) {
+                  setVisualSimilarityRecentPosts(value);
+                }
+              }}
+            />
+            <small style={{color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem'}}>Avoid duplicates against the last N recent posts (default 30)</small>
           </div>
 
           <button className="btn-primary" onClick={saveScheduler}>Save Scheduler Settings</button>

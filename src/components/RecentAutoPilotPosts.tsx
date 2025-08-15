@@ -51,40 +51,14 @@ const RecentAutoPilotPosts: React.FC<{ posts: AutoPilotPost[] }> = ({ posts = []
       </div>
       
       {!showRecent ? (
-        // Show upcoming posts (existing placeholder content)
-        <>
-          <div className="activity-item">
-            <div className="activity-dot"></div>
-            <div className="activity-content">
-              <div className="activity-title">Post auto-published</div>
-              <div className="activity-time">12 minutes ago</div>
-            </div>
+        // Upcoming placeholder trimmed per spec
+        <div className="activity-item">
+          <div className="activity-dot"></div>
+          <div className="activity-content">
+            <div className="activity-title">Upcoming posts will appear here</div>
+            <div className="activity-time">—</div>
           </div>
-
-          <div className="activity-item">
-            <div className="activity-dot"></div>
-            <div className="activity-content">
-              <div className="activity-title">Story view milestone reached</div>
-              <div className="activity-time">1 hour ago</div>
-            </div>
-          </div>
-
-          <div className="activity-item">
-            <div className="activity-dot"></div>
-            <div className="activity-content">
-              <div className="activity-title">New follower surge detected</div>
-              <div className="activity-time">3 hours ago</div>
-            </div>
-          </div>
-
-          <div className="activity-item">
-            <div className="activity-dot"></div>
-            <div className="activity-content">
-              <div className="activity-title">Engagement goal achieved</div>
-              <div className="activity-time">6 hours ago</div>
-            </div>
-          </div>
-        </>
+        </div>
       ) : (
         // Show recent posts with thumbnails
         posts.length === 0 ? (

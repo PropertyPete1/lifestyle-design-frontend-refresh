@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
   // Chart and dashboard
   chartStatus: () => apiUrl('api/chart/status'),
   settings: () => apiUrl('api/settings'),
+  postNow: () => apiUrl('api/post-now'),
   
   // Autopilot - Fixed to match backend endpoints
   autopilotRun: () => apiUrl('api/autopilot/run'), // ✅ CORRECT AUTOPILOT ENDPOINT
@@ -36,7 +37,10 @@ export const API_ENDPOINTS = {
   instagramAnalytics: () => apiUrl('api/instagram/analytics'),
   youtubeAnalytics: () => apiUrl('api/youtube/analytics'),
 
-  // Audience heatmaps and scheduling
+  // Heatmaps and scheduling (aligned to spec)
+  heatmapWeekly: () => apiUrl('api/heatmap/weekly'),
+  heatmapOptimalTimes: () => apiUrl('api/heatmap/optimal-times'),
+  // Legacy/compat endpoints kept for backwards compatibility where still referenced
   audienceHeatmap: (platform: 'instagram' | 'youtube' = 'instagram', days?: number) => apiUrl(`api/audience-heatmap?platform=${platform}${days ? `&days=${days}` : ''}`),
   optimalTimes: (platform: 'instagram' | 'youtube' = 'instagram', days?: number) => apiUrl(`api/optimal-times?platform=${platform}${days ? `&days=${days}` : ''}`),
   performanceHeatmap: (platform: 'instagram' | 'youtube' = 'instagram', days?: number) => apiUrl(`api/performance-heatmap?platform=${platform}${days ? `&days=${days}` : ''}`),

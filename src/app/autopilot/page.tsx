@@ -48,12 +48,14 @@ export default function AutopilotPage() {
     peakHours: true,
     repostDelay: 2,
     minViews: 10000,
-    visualSimilarityDays: 30,
+    visualSimilarityRecentPosts: 30,
     trendingAudio: true,
     aiCaptions: true,
     dropboxSave: false,
     platforms: ['instagram', 'youtube']
   });
+  const [burstEnabled, setBurstEnabled] = useState(false);
+  const [burstConfig, setBurstConfig] = useState<{ startTime: string; endTime: string; postsPerMinute: number; maxTotal: number; preloadMinutes?: number; scrapeLimit?: number; platforms: string[] }>({ startTime: '12:00', endTime: '13:00', postsPerMinute: 1, maxTotal: 10, platforms: ['instagram'] });
 
   // Header status
   const [headerStatus, setHeaderStatus] = useState<{ active: boolean; igUsed: number; igLimit: number; ytUsed: number; ytLimit: number; nextRunISO: string; lastRefreshed: string }>({ active: false, igUsed: 0, igLimit: 0, ytUsed: 0, ytLimit: 0, nextRunISO: '', lastRefreshed: '' });
@@ -179,13 +181,25 @@ export default function AutopilotPage() {
           peakHours: settingsRes.peakHours !== false,
           repostDelay: settingsRes.repostDelay || 2,
           minViews: likesThreshold,
-          visualSimilarityDays: settingsRes.visualSimilarityDays || 30,
+          visualSimilarityRecentPosts: settingsRes.visualSimilarityRecentPosts || settingsRes.visualSimilarityDays || 30,
           trendingAudio: settingsRes.trendingAudio !== false,
           aiCaptions: settingsRes.aiCaptions !== false,
           dropboxSave: settingsRes.dropboxSave || false,
           platforms: []
         });
         setAutopilotActive(settingsRes.autopilotEnabled || false);
+
+        // Load burst mode
+        setBurstEnabled(Boolean(settingsRes.burstModeEnabled));
+        setBurstConfig({
+          startTime: settingsRes.burstModeConfig?.startTime || '12:00',
+          endTime: settingsRes.burstModeConfig?.endTime || '13:00',
+          postsPerMinute: settingsRes.burstModeConfig?.postsPerMinute || 1,
+          maxTotal: settingsRes.burstModeConfig?.maxTotal || 10,
+          preloadMinutes: settingsRes.burstModeConfig?.preloadMinutes || undefined,
+          scrapeLimit: settingsRes.burstModeConfig?.scrapeLimit || undefined,
+          platforms: settingsRes.burstModeConfig?.platforms || ['instagram']
+        });
       }
 
       // Load autopilot status from Phase 9 endpoint
@@ -306,11 +320,21 @@ export default function AutopilotPage() {
         // Backend uses likes; send both for compatibility
         minimumIGLikesToRepost: settings.minViews,
         minViews: settings.minViews,
-        visualSimilarityDays: settings.visualSimilarityDays,
+        visualSimilarityRecentPosts: settings.visualSimilarityRecentPosts,
         trendingAudio: settings.trendingAudio,
         aiCaptions: settings.aiCaptions,
         dropboxSave: settings.dropboxSave,
-        autopilotEnabled: autopilotActive
+        autopilotEnabled: autopilotActive,
+        burstModeEnabled: burstEnabled,
+        burstModeConfig: burstEnabled ? {
+          startTime: burstConfig.startTime,
+          endTime: burstConfig.endTime,
+          postsPerMinute: burstConfig.postsPerMinute,
+          maxTotal: burstConfig.maxTotal,
+          preloadMinutes: burstConfig.preloadMinutes,
+          scrapeLimit: burstConfig.scrapeLimit,
+          platforms: burstConfig.platforms
+        } : undefined
       });
       
       showNotification('💾 Settings saved successfully!', 'success');
@@ -614,26 +638,26 @@ export default function AutopilotPage() {
               <div className="setting-description">Minimum likes required for automatic reposting</div>
             </div>
 
-            {/* Visual Similarity Protection */}
+            {/* Visual Similarity Protection (Recent Posts) */}
             <div className="setting-item">
               <label className="setting-label">
-                🎨 Visual Similarity Protection (Days)
+                🎨 Visual Similarity Protection (Recent Posts)
               </label>
               <input 
                 type="number" 
                 className="setting-input" 
-                value={settings.visualSimilarityDays} 
-                min="7" 
-                max="90"
+                value={settings.visualSimilarityRecentPosts} 
+                min="1" 
+                max="200"
                 step="1"
                 onChange={(e) => {
                   const value = parseInt(e.target.value);
-                  if (!isNaN(value) && value >= 1 && value <= 90) {
-                    updateSetting('visualSimilarityDays', value);
+                  if (!isNaN(value) && value >= 1 && value <= 200) {
+                    updateSetting('visualSimilarityRecentPosts', value);
                   }
                 }}
               />
-              <div className="setting-description">Days to avoid visually similar content (currently {settings.visualSimilarityDays} days)</div>
+              <div className="setting-description">Avoid duplicates against the last N recent posts (default 30)</div>
             </div>
 
             {/* Attach Trending Audio */}
@@ -701,6 +725,67 @@ export default function AutopilotPage() {
             </div>
           </div>
 
+          {/* Burst Mode */}
+          <div className="settings-card" style={{ marginTop: 12 }}>
+            <div className="card-header">
+              <div className="card-emoji">⚡</div>
+              <h2 className="card-title">Burst Mode</h2>
+            </div>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label className="form-label">Enable Burst Mode</label>
+              <div className={`toggle-switch ${burstEnabled ? 'active' : ''}`} onClick={()=>setBurstEnabled(!burstEnabled)}><div className="toggle-slider"></div></div>
+            </div>
+            {burstEnabled && (
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label className="form-label">Window Start (CT)</label>
+                    <input type="time" className="form-input" value={burstConfig.startTime} onChange={(e)=>setBurstConfig({ ...burstConfig, startTime: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="form-label">Window End (CT)</label>
+                    <input type="time" className="form-input" value={burstConfig.endTime} onChange={(e)=>setBurstConfig({ ...burstConfig, endTime: e.target.value })} />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label className="form-label">Posts Per Minute (cap)</label>
+                    <input type="number" className="form-input" value={burstConfig.postsPerMinute} min={1} max={120} onChange={(e)=>setBurstConfig({ ...burstConfig, postsPerMinute: Math.max(1, parseInt(e.target.value||'1')) })} />
+                  </div>
+                  <div>
+                    <label className="form-label">Max Posts in Window</label>
+                    <input type="number" className="form-input" value={burstConfig.maxTotal} min={1} max={999} onChange={(e)=>setBurstConfig({ ...burstConfig, maxTotal: Math.max(1, parseInt(e.target.value||'1')) })} />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label className="form-label">Preload Minutes (optional)</label>
+                    <input type="number" className="form-input" value={burstConfig.preloadMinutes ?? ''} min={0} onChange={(e)=>setBurstConfig({ ...burstConfig, preloadMinutes: e.target.value===''? undefined : Math.max(0, parseInt(e.target.value||'0')) })} />
+                  </div>
+                  <div>
+                    <label className="form-label">Scrape Limit (optional)</label>
+                    <input type="number" className="form-input" value={burstConfig.scrapeLimit ?? ''} min={0} onChange={(e)=>setBurstConfig({ ...burstConfig, scrapeLimit: e.target.value===''? undefined : Math.max(0, parseInt(e.target.value||'0')) })} />
+                  </div>
+                </div>
+                <div>
+                  <label className="form-label">Platforms</label>
+                  <div className="multi-select">
+                    {['instagram','youtube'].map(p => (
+                      <div key={p} className={`platform-chip ${burstConfig.platforms.includes(p) ? 'selected' : ''}`} onClick={()=>{
+                        setBurstConfig(prev => ({ ...prev, platforms: prev.platforms.includes(p) ? prev.platforms.filter(x=>x!==p) : [...prev.platforms, p] }))
+                      }}>
+                        {p==='instagram'?'📷 Instagram':'▶️ YouTube'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: '#999' }}>
+                  When Burst Mode is ON, caps override the daily/hourly limits during the window. Scheduling stays atomic + no duplicate posts (visual hash).
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Action Buttons */}
           <div className="action-buttons">
             <button className="action-btn btn-save" onClick={saveSettings}>
@@ -719,6 +804,9 @@ export default function AutopilotPage() {
                 ⏹️ Stop Autopilot
               </button>
             )}
+            <button className="action-btn btn-run" onClick={()=>setQueueOpen(true)}>
+              🔁 Open Smart Queue
+            </button>
           </div>
         </div>
       </div>

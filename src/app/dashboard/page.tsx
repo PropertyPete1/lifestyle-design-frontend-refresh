@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 const DashboardChart = dynamic(() => import('../../components/DashboardChart'), { ssr: false });
-import HeartStatusCard from '../../components/HeartStatusCard';
 const ActivityHeatmap = dynamic(() => import('../../components/ActivityHeatmap'), { ssr: false });
 import RecentAutoPilotPostsWrapper from '../../components/RecentAutoPilotPostsWrapper';
 import { API_ENDPOINTS } from '../../utils/api';
@@ -81,6 +80,8 @@ function Dashboard() {
   const [trendingFlags, setTrendingFlags] = useState<{ instagram: boolean; youtube: boolean }>({ instagram: false, youtube: false });
   const [lastPostSpikeByPlatform, setLastPostSpikeByPlatform] = useState<{ instagram: number | null; youtube: number | null }>({ instagram: null, youtube: null });
   const [lastQueueUpdate, setLastQueueUpdate] = useState<number>(0);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [showRecentList, setShowRecentList] = useState(false);
   
   // ✅ NEW: Enhanced activity feed and chart state
   const [enhancedActivity, setEnhancedActivity] = useState<any[]>([]);
@@ -969,10 +970,6 @@ function Dashboard() {
       
       // Handle menu actions
       switch (action) {
-        case 'zillow':
-          window.location.href = '/zillow';
-          showNotification('🏡 Opening Zillow Assistant...');
-          break;
         case 'autopilot-page':
           // Navigate to AutoPilot dashboard page
           window.location.href = '/autopilot';
@@ -1060,7 +1057,7 @@ function Dashboard() {
     setManualPostRunning(true);
     
     try {
-              const response = await fetch(API_ENDPOINTS.autopilotManualPost(), {
+      const response = await fetch(API_ENDPOINTS.postNow(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -1072,6 +1069,8 @@ function Dashboard() {
         // Refresh data
         fetchAnalytics();
         fetchEnhancedActivity();
+        // Refresh queue preview
+        await fetchQueuedPosts();
       } else {
         showNotification('❌ Post failed', 'error');
       }
@@ -1253,7 +1252,7 @@ function Dashboard() {
               </div>
               <div className="metric-value">{status.maxPosts}/day</div>
               <div className="metric-change">
-                Next post at {status.postTime} (delay: {status.repostDelay}d)
+                Next post at {status.postTime} CT (delay: {status.repostDelay}d)
               </div>
             </div>
           </div>
@@ -1303,7 +1302,31 @@ function Dashboard() {
             <ActivityHeatmap />
           </div>
 
-          {/* 🚀 Manual Post Control Panel (YouTube) */}
+          {/* Controls strip: queue + recent toggle */}
+          <div style={{
+            display: 'flex',
+            gap: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: 16
+          }}>
+            <button
+              onClick={() => setQueueOpen(true)}
+              className="action-btn btn-run"
+              style={{ padding: '10px 14px', borderRadius: 8 }}
+            >
+              🔁 View Smart Queue
+            </button>
+            <button
+              onClick={() => setShowRecentList((s) => !s)}
+              className="action-btn btn-secondary"
+              style={{ padding: '10px 14px', borderRadius: 8 }}
+            >
+              {showRecentList ? 'Hide Recent' : 'Show Recent'}
+            </button>
+          </div>
+
+          {/* 🚀 Manual Post Control Panel */}
           <div className="manual-post-panel pro" style={{
             marginTop: '32px',
             marginBottom: '24px',
@@ -1381,7 +1404,7 @@ function Dashboard() {
 
           <div className="grid-layout">
             {/* ✅ Recent AutoPilot Posts Component - positioned under lines graph */}
-            <RecentAutoPilotPostsWrapper platform="instagram" />
+            {showRecentList ? <RecentAutoPilotPostsWrapper platform="instagram" /> : <div />}
             <div></div>
           </div>
         </div>
@@ -1435,7 +1458,7 @@ function Dashboard() {
               </div>
               <div className="metric-value youtube">{status.maxPosts}/day</div>
               <div className="metric-change">
-                Next upload at {status.postTime} (delay: {status.repostDelay}d)
+                Next upload at {status.postTime} CT (delay: {status.repostDelay}d)
               </div>
             </div>
           </div>
@@ -1452,7 +1475,7 @@ function Dashboard() {
 
           <div className="grid-layout">
             {/* ✅ Recent AutoPilot Posts Component - positioned under lines graph */}
-            <RecentAutoPilotPostsWrapper platform="youtube" />
+            {showRecentList ? <RecentAutoPilotPostsWrapper platform="youtube" /> : <div />}
             <div></div>
           </div>
         </div>
@@ -1540,6 +1563,64 @@ function Dashboard() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Smart Queue Drawer */}
+      <div 
+        className={`queue-overlay ${queueOpen ? 'show' : ''}`} 
+        onClick={() => setQueueOpen(false)}
+        style={{ position: 'fixed', inset: 0, background: queueOpen ? 'rgba(0,0,0,0.5)' : 'transparent', transition: 'background 0.2s ease', pointerEvents: queueOpen ? 'auto' : 'none' }}
+      ></div>
+      <div className={`queue-drawer ${queueOpen ? 'open' : ''}`} style={{
+        position: 'fixed', top: 0, right: 0, height: '100%', width: 'min(560px, 92vw)', background: '#0a0a0a', borderLeft: '1px solid #1f1f1f', transform: queueOpen ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 0.25s ease', zIndex: 9999, display: 'flex', flexDirection: 'column'
+      }}>
+        <div className="queue-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottom: '1px solid #1f1f1f' }}>
+          <h2 className="queue-title" style={{ margin: 0 }}>🔁 Smart Autopilot Queue</h2>
+          <button className="close-queue" onClick={() => setQueueOpen(false)} style={{ background: 'transparent', color: '#aaa', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
+        </div>
+        <div className="queue-content" style={{ padding: 16, overflow: 'auto' }}>
+          {queuedPosts.length === 0 ? (
+            <div className="empty-state" style={{ textAlign: 'center', color: '#64748b', padding: '3rem' }}>
+              <div style={{ fontSize: '3rem' }}>📭</div>
+              <div>No videos in queue</div>
+            </div>
+          ) : (
+            queuedPosts.map((video: any, index: number) => (
+              <div key={video.id || index} className="video-card" style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: 12, padding: 12, border: '1px solid #1f1f1f', borderRadius: 8, marginBottom: 12 }}>
+                <div className="video-preview" style={{ width: 100, height: 180, borderRadius: 8, position: 'relative', border: '2px solid #2d3748', overflow: 'hidden' }}>
+                  <img src={video.thumbnailUrl || '/default-video.jpg'} alt="thumb" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e:any)=>{e.currentTarget.src='/default-video.jpg'}} />
+                  <div style={{ position: 'absolute', bottom: 8, left: 8, right: 8, color: '#fff', fontSize: 12, textAlign: 'center', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                    {video.platform === 'instagram' ? '📷 Instagram' : '▶️ YouTube'}
+                  </div>
+                </div>
+                <div className="video-metadata" style={{ display: 'grid', gap: 6 }}>
+                  <div style={{ fontSize: 12, color: '#bbb' }}>{video.caption ? String(video.caption).slice(0, 140) : 'No caption'}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 8, fontSize: 13 }}>
+                    <div style={{ color: '#888' }}>📱 Platform</div>
+                    <div><span className={`platform-badge ${video.platform}`}>{video.platform}</span></div>
+                    <div style={{ color: '#888' }}>⏰ Scheduled Time</div>
+                    <div>{video.scheduledAt ? new Date(video.scheduledAt).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) + ' CT' : 'Not scheduled'}</div>
+                    <div style={{ color: '#888' }}>📊 Status</div>
+                    <div><span className={`status-badge status-${video.status || 'unknown'}`}>{video.status ? String(video.status).charAt(0).toUpperCase() + String(video.status).slice(1) : 'Unknown'}</span></div>
+                    <div style={{ color: '#888' }}>🎯 Original Engagement</div>
+                    <div>{video.engagement ? Number(video.engagement).toLocaleString() : 'N/A'}</div>
+                    <div style={{ color: '#888' }}>☁️ S3 Video</div>
+                    <div style={{ fontFamily: 'monospace', fontSize: 12 }}>{video.s3Url ? '✅ Uploaded' : '❌ Missing'}</div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+
+          {queuedPosts.length > 0 && (
+            <div style={{ marginTop: 16, textAlign: 'center' }}>
+              <button className="action-btn btn-run" onClick={async()=>{
+                try{ const r=await fetch(API_ENDPOINTS.postNow(),{method:'POST'}); const j=await r.json(); if(j?.success){ showNotification('✅ Posted queue successfully','success'); await fetchQueuedPosts(); } else { showNotification('❌ Post Now failed','error'); } }catch{ showNotification('❌ Connection error','error'); }
+              }}>🚀 Post Now</button>
+              <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>Immediately posts all queued videos</div>
+            </div>
+          )}
+        </div>
       </div>
       </>)}
     </div>

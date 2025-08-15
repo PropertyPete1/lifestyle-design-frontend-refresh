@@ -13,8 +13,8 @@ export default function ActivityHeatmap() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const url = API_ENDPOINTS.audienceHeatmap(platform)
-      const res = await fetch(url)
+      // Use weekly heatmap per spec
+      const res = await fetch(API_ENDPOINTS.heatmapWeekly())
       if (res.ok) {
         const data = await res.json()
         setGrid(data.grid || [])
@@ -29,17 +29,20 @@ export default function ActivityHeatmap() {
       }
     }
     const fetchSummary = async () => {
-      const res = await fetch(API_ENDPOINTS.audienceSummary(platform))
-      if (res.ok) {
-        const data = await res.json();
-        setSummary(data.summary || '')
-      }
+      // Optional summary not required in spec; keep graceful fallback
+      setSummary('')
     }
     const fetchOptimal = async () => {
-      const res = await fetch(API_ENDPOINTS.optimalTimes(platform))
+      const res = await fetch(API_ENDPOINTS.heatmapOptimalTimes())
       if (res.ok) {
         const data = await res.json();
-        setOptimal(data.top3 || [])
+        const list: string[] = []
+        const ig = (data?.slots || []).filter((s:any)=>s.platform==='instagram').slice(0,3)
+        const yt = (data?.slots || []).filter((s:any)=>s.platform==='youtube').slice(0,3)
+        const fmt = (s:any)=> (s?.localLabel) || new Date(s.iso).toLocaleString('en-US',{ timeZone:'America/Chicago', hour:'numeric', minute:'2-digit', hour12:true }) + ' CT'
+        if (ig.length) list.push(...ig.map(fmt))
+        if (yt.length) list.push(...yt.map(fmt))
+        setOptimal(list)
       }
     }
     fetchData(); fetchSummary(); fetchOptimal();
