@@ -2,16 +2,18 @@ export async function fetchRecentPosts(platform: 'instagram' | 'youtube') {
   try {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://lifestyle-design-backend-v2-clean.onrender.com';
     // ✅ Connect to backend API that filters MongoDB by platform
-    const response = await fetch(`${API_BASE_URL}/api/activity/feed?platform=${platform}&limit=5`);
+    const response = await fetch(`${API_BASE_URL}/api/activity/feed?platform=${platform}&limit=5`, { cache: 'no-store' });
     
     if (!response.ok) {
       throw new Error(`Failed to fetch ${platform} posts: ${response.status}`);
     }
     
-    const data = await response.json();
+    const json = await response.json();
+    const raw = Array.isArray(json) ? json : (json.data || json.items || json.posts || []);
+    const arr = Array.isArray(raw) ? raw : [];
     
     // ✅ Transform data to ensure consistent format with thumbnails
-    return data.map((post: any) => ({
+    return arr.map((post: any) => ({
       videoId: post.videoId || post.id || post._id,
       thumbnailUrl: post.thumbnail || post.thumbnailUrl || post.video_thumbnail,
       timestampFormatted: post.timestampFormatted || post.timestamp || formatTimestamp(post.createdAt || post.date),

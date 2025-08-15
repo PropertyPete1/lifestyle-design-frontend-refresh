@@ -15,9 +15,9 @@ const RecentAutoPilotPostsWrapper: React.FC<{ platform: 'instagram' | 'youtube' 
     const loadPosts = async () => {
       try {
         const data = await fetchRecentPosts(platform);
-        
+        const safe = Array.isArray(data) ? data : [];
         // Transform data to match the new component's expected format
-        const transformedPosts: AutoPilotPost[] = data.map((post: any) => ({
+        const transformedPosts: AutoPilotPost[] = safe.map((post: any) => ({
           platform: platform === 'instagram' ? 'Instagram' : 'YouTube',
           thumbnailUrl: post.thumbnailUrl || '/default-video.jpg',
           timestamp: post.timestampFormatted || 'Recently posted'
